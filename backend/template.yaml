@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  MEL - Movie Evaluation Lab Backend Infrastructure
+
+# 1. Global Parameters (FIXED: Added Gemini here)
+Parameters:
+  TMDBApiKey:
+    Type: String
+    Description: API Key for TMDB
+  OMDBApiKey:
+    Type: String
+    Description: API Key for OMDb
+  GEMINIApiKey:          # <--- THIS WAS MISSING
+    Type: String
+    Description: API Key for Google Gemini AI
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+    LoggingConfig:
+      LogFormat: JSON
+
+Resources:
+  # 1. The FAST Search Function (No AI)
+  MelSearchFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Architectures: [x86_64]
+      Environment:
+        Variables:
+          TMDB_API_KEY: !Ref TMDBApiKey
+          OMDB_API_KEY: !Ref OMDBApiKey
+      Events:
+        SearchEndpoint:
+          Type: Api 
+          Properties:
+            Path: /search
+            Method: get
+
+  # 2. The SLOW Analyze Function (With AI)
+  MelAnalyzeFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: analyze/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Architectures: [x86_64]
+      Timeout: 30             # Give AI 30 seconds
+      Environment:
+        Variables:
+          TMDB_API_KEY: !Ref TMDBApiKey
+          GEMINI_API_KEY: !Ref GEMINIApiKey
+      Events:
+        AnalyzeEndpoint:
+          Type: Api 
+          Properties:
+            Path: /analyze
+            Method: get
+
+  # Monitoring
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: TAG_FILTERS_1_0
+        Query:
+          ResourceTypeFilters:
+            - AWS::AllSupported
+          TagFilters:
+            - Key: stack
+              Values:
+                - !Ref AWS::StackName
+
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'
+
+Outputs:
+  MelApiEndpoint:
+    Description: "Public API Gateway Endpoint"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"

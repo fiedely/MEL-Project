@@ -1,0 +1,6 @@
+{
+  "httpMethod": "GET",
+  "queryStringParameters": {
+    "title": "Nightmare Before Christmas"
+  }
+}
