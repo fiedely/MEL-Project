@@ -11,14 +11,14 @@ Parameters:
   OMDBApiKey:
     Type: String
     Description: API Key for OMDb
-  GEMINIApiKey:          # <--- THIS WAS MISSING
+  GEMINIApiKey:
     Type: String
     Description: API Key for Google Gemini AI
 
 Globals:
   Function:
-    Timeout: 10
-    MemorySize: 128
+    Timeout: 120
+    MemorySize: 256
     LoggingConfig:
       LogFormat: JSON
 
@@ -31,6 +31,8 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.12
       Architectures: [x86_64]
+      Timeout: 120
+      MemorySize: 256
       Environment:
         Variables:
           TMDB_API_KEY: !Ref TMDBApiKey
@@ -50,7 +52,8 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.12
       Architectures: [x86_64]
-      Timeout: 30             # Give AI 30 seconds
+      Timeout: 120
+      MemorySize: 256
       Environment:
         Variables:
           TMDB_API_KEY: !Ref TMDBApiKey
