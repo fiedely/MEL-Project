@@ -123,15 +123,7 @@ function App() {
 
       <main className="flex flex-col items-center">
         
-        {/* Intro */}
-        {!movie && !loading && (
-          <div className="mt-20 text-center space-y-2 opacity-60">
-            <p className="text-sm font-bold tracking-widest uppercase text-gray-400">Movie Evaluation Lab</p>
-            <p className="text-gray-500">Begin your research by entering a title below.</p>
-          </div>
-        )}
-
-        {/* Search */}
+        {/* Intro Removed - Just Search Bar Now */}
         <SearchBar 
           query={query} 
           setQuery={setQuery} 
