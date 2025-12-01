@@ -55,6 +55,12 @@ def lambda_handler(event, context):
             "runtime_minutes": details.get('runtime'),
             "plot": details.get('overview'),
             "poster": f"https://image.tmdb.org/t/p/w500{details.get('poster_path')}" if details.get('poster_path') else None,
+            
+            # === NEW FIELDS FOR PROGRESSIVE LOADING ===
+            "vote_average": details.get('vote_average', 0),
+            "vote_count": details.get('vote_count', 0),
+            # ==========================================
+
             "scores": {
                 "imdb": omdb_data.get('imdbRating', 'N/A'),
                 "metacritic": omdb_data.get('Metascore', 'N/A'),

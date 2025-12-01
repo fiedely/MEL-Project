@@ -5,7 +5,7 @@ import { Info } from 'lucide-react';
 import Navbar from './components/Navbar';
 import SearchBar from './components/SearchBar';
 import MovieCard from './components/MovieCard';
-import LabReport from './components/LabReport'; // <--- New Import
+import LabReport from './components/LabReport';
 
 // --- TYPES ---
 interface MovieData {
@@ -27,6 +27,9 @@ interface MovieData {
   revenue: string;
   language?: string;
   writer?: string;
+  // NEW FIELDS
+  vote_average: number;
+  vote_count: number;
 }
 
 interface LabData {
@@ -87,17 +90,29 @@ function App() {
 
   const fetchLabReport = async (title: string) => {
     setLabLoading(true);
-    try {
+    let attempts = 0;
+    const maxAttempts = 3;
+    let success = false;
+
+    while (attempts < maxAttempts && !success) {
+      try {
+        attempts++;
+        console.log(`🧪 Lab Analysis Attempt ${attempts}/${maxAttempts}...`);
+        
         const analyzeRes = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
             params: { title: title }
         });
         setLabData(analyzeRes.data);
-    } catch (err) {
-        console.error("Lab Report failed", err);
-        // We don't show an error to user, just leave the report null
-    } finally {
-        setLabLoading(false);
+        success = true; // Exit loop on success
+      } catch (err) {
+        console.error(`Attempt ${attempts} failed:`, err);
+        // Wait 1 second before retrying if not the last attempt
+        if (attempts < maxAttempts) {
+             await new Promise(r => setTimeout(r, 1000));
+        }
+      }
     }
+    setLabLoading(false);
   };
 
   return (
@@ -138,9 +153,12 @@ function App() {
           {movie && <MovieCard data={movie} />}
 
           {/* 2. Lab Report (Loads Second) */}
-          {/* We show this if we have movie data, either loading or finished */}
           {movie && (
-              <LabReport loading={labLoading} data={labData} />
+              <LabReport 
+                loading={labLoading} 
+                data={labData} 
+                movie={movie} 
+              />
           )}
           
         </div>
