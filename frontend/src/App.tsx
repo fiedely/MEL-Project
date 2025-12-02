@@ -6,9 +6,11 @@ import Navbar from './components/Navbar';
 import SearchBar from './components/SearchBar';
 import MovieCard from './components/MovieCard';
 import LabReport from './components/LabReport';
+import SearchResults from './components/SearchResults';
 
 // --- TYPES ---
 interface MovieData {
+  tmdb_id: number; // [NEW] Added ID field
   title: string;
   poster: string;
   rated: string;
@@ -27,7 +29,6 @@ interface MovieData {
   revenue: string;
   language?: string;
   writer?: string;
-  // NEW FIELDS
   vote_average: number;
   vote_count: number;
 }
@@ -45,41 +46,69 @@ interface LabData {
   };
 }
 
+interface Candidate {
+  id: number;
+  title: string;
+  year: string;
+  poster: string | null;
+  overview: string;
+}
+
 function App() {
   const [query, setQuery] = useState('');
   
-  // State 1: Main Movie Data (Fast)
+  // State 1: Data
+  const [candidates, setCandidates] = useState<Candidate[] | null>(null);
   const [movie, setMovie] = useState<MovieData | null>(null);
+  const [labData, setLabData] = useState<LabData | null>(null);
+  
+  // State 2: UI Status
   const [loading, setLoading] = useState(false);
+  const [labLoading, setLabLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // State 2: Lab Report Data (Slow/AI)
-  const [labData, setLabData] = useState<LabData | null>(null);
-  const [labLoading, setLabLoading] = useState(false);
+  // --- RESET HANDLER (For Navbar) ---
+  const handleReset = () => {
+    setQuery('');
+    setMovie(null);
+    setCandidates(null);
+    setLabData(null);
+    setError('');
+    setLoading(false);
+    setLabLoading(false);
+  };
+
+  const resetState = () => {
+    setError('');
+    setMovie(null);
+    setCandidates(null);
+    setLabData(null);
+    setLabLoading(false);
+  };
 
   const searchMovie = async (e: FormEvent) => {
     e.preventDefault();
     if(!query) return;
 
-    // Reset everything
+    resetState();
     setLoading(true);
-    setLabLoading(false); // Don't start lab loading yet
-    setError('');
-    setMovie(null);
-    setLabData(null);
 
     try {
-      // 1. FAST: Call Search Endpoint
-      const searchRes = await axios.get(`${import.meta.env.VITE_API_URL}/search`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/search`, {
         params: { title: query }
       });
       
-      const movieResult = searchRes.data;
-      setMovie(movieResult);
-      setLoading(false); // Stop main loading immediately
+      const data = res.data;
 
-      // 2. SLOW: Trigger Lab Analysis (Background)
-      fetchLabReport(movieResult.title);
+      if (data.candidates) {
+        setCandidates(data.candidates);
+        setLoading(false);
+      } else {
+        setMovie(data);
+        setLoading(false);
+        // [FIX] Pass ID and Title
+        fetchLabReport(data.tmdb_id, data.title);
+      }
 
     } catch (err) {
       console.error(err);
@@ -88,7 +117,30 @@ function App() {
     }
   };
 
-  const fetchLabReport = async (title: string) => {
+  const selectMovie = async (id: number) => {
+    setCandidates(null);
+    setLoading(true);
+
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/search`, {
+        params: { id: id }
+      });
+
+      const data = res.data;
+      setMovie(data);
+      setLoading(false);
+      // [FIX] Pass ID and Title
+      fetchLabReport(data.tmdb_id, data.title);
+
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load movie details.');
+      setLoading(false);
+    }
+  };
+
+  // [FIX] Updated signature to accept ID
+  const fetchLabReport = async (id: number, title: string) => {
     setLabLoading(true);
     let attempts = 0;
     const maxAttempts = 3;
@@ -97,16 +149,17 @@ function App() {
     while (attempts < maxAttempts && !success) {
       try {
         attempts++;
-        console.log(`🧪 Lab Analysis Attempt ${attempts}/${maxAttempts}...`);
-        
         const analyzeRes = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
-            params: { title: title }
+            // [FIX] Send 'id' to backend
+            params: { 
+              id: id,
+              title: title 
+            }
         });
         setLabData(analyzeRes.data);
-        success = true; // Exit loop on success
+        success = true; 
       } catch (err) {
-        console.error(`Attempt ${attempts} failed:`, err);
-        // Wait 1 second before retrying if not the last attempt
+        console.error(`Analysis attempt ${attempts} failed:`, err);
         if (attempts < maxAttempts) {
              await new Promise(r => setTimeout(r, 1000));
         }
@@ -118,12 +171,10 @@ function App() {
   return (
     <div className="min-h-screen bg-lab-white font-sans selection:bg-lab-lavender selection:text-purple-900 pb-20">
       
-      {/* Navigation */}
-      <Navbar />
+      <Navbar onReset={handleReset} />
 
       <main className="flex flex-col items-center">
         
-        {/* Intro Removed - Just Search Bar Now */}
         <SearchBar 
           query={query} 
           setQuery={setQuery} 
@@ -131,20 +182,23 @@ function App() {
           loading={loading}
         />
 
-        {/* Error */}
         {error && (
           <div className="mt-4 flex items-center gap-2 bg-red-50 text-red-500 px-4 py-3 rounded-xl border border-red-100 text-sm font-medium animate-pulse">
               <Info size={18} /> {error}
           </div>
         )}
 
-        {/* Results Container */}
         <div className="w-full px-4 mb-10">
           
-          {/* 1. Main Card (Loads First) */}
+          {candidates && (
+            <SearchResults 
+              candidates={candidates} 
+              onSelect={selectMovie} 
+            />
+          )}
+
           {movie && <MovieCard data={movie} />}
 
-          {/* 2. Lab Report (Loads Second) */}
           {movie && (
               <LabReport 
                 loading={labLoading} 
