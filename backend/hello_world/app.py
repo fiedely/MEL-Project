@@ -9,6 +9,7 @@ def lambda_handler(event, context):
     query_params = event.get('queryStringParameters') or {}
     title_query = query_params.get('title')
     id_query = query_params.get('id')
+    page_query = query_params.get('page', '1')
 
     if not title_query and not id_query:
         return build_response(400, {"error": "Please provide a title or id"})
@@ -22,16 +23,35 @@ def lambda_handler(event, context):
 
         # --- PATH B: SEARCH BY TITLE ---
         else:
-            tmdb_search_url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={title_query}"
-            tmdb_response = requests.get(tmdb_search_url).json()
-            results = tmdb_response.get('results', [])
+            try:
+                app_page = int(page_query)
+            except ValueError:
+                app_page = 1
 
-            if not results:
+            tmdb_page = (app_page - 1) // 2 + 1
+            is_second_half = (app_page % 2 == 0)
+
+            tmdb_search_url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={title_query}&page={tmdb_page}"
+            tmdb_response = requests.get(tmdb_search_url).json()
+            
+            results = tmdb_response.get('results', [])
+            total_tmdb_pages = tmdb_response.get('total_pages', 1)
+
+            results.sort(key=lambda x: x.get('popularity', 0), reverse=True)
+
+            if not results and app_page == 1:
                 return build_response(404, {"error": "Subject not found"})
 
-            if len(results) > 1:
+            if app_page == 1 and tmdb_response.get('total_results') == 1:
+                tmdb_id = results[0]['id']
+            else:
+                start_index = 10 if is_second_half else 0
+                end_index = 20 if is_second_half else 10
+                
+                page_results = results[start_index:end_index]
+                
                 candidates = []
-                for movie in results[:6]: 
+                for movie in page_results: 
                     release_date = movie.get('release_date', '')
                     year = release_date[:4] if release_date else "N/A"
                     candidates.append({
@@ -41,12 +61,15 @@ def lambda_handler(event, context):
                         "poster": f"https://image.tmdb.org/t/p/w200{movie.get('poster_path')}" if movie.get('poster_path') else None,
                         "overview": movie.get('overview', '') 
                     })
-                return build_response(200, {"candidates": candidates})
-            
-            tmdb_id = results[0]['id']
+                
+                return build_response(200, {
+                    "candidates": candidates,
+                    "page": app_page,
+                    "total_pages": total_tmdb_pages * 2 
+                })
 
         # --- FETCH DETAILS ---
-        tmdb_details_url = f"https://api.themoviedb.org/3/movie/{tmdb_id}?api_key={TMDB_API_KEY}&append_to_response=credits,external_ids,release_dates"
+        tmdb_details_url = f"https://api.themoviedb.org/3/movie/{tmdb_id}?api_key={TMDB_API_KEY}&append_to_response=credits,external_ids,release_dates,videos,keywords,recommendations"
         details = requests.get(tmdb_details_url).json()
         imdb_id = details.get('external_ids', {}).get('imdb_id')
 
@@ -70,7 +93,7 @@ def lambda_handler(event, context):
         if not composers:
             composers = get_crew_by_job('Music')
 
-        # 2. Collection Info (With Full Movie List)
+        # 2. Collection Info
         collection_info = None
         collection_raw = details.get('belongs_to_collection')
         
@@ -89,8 +112,6 @@ def lambda_handler(event, context):
                         "year": r_date[:4] if r_date else "N/A",
                         "poster": f"https://image.tmdb.org/t/p/w200{part.get('poster_path')}" if part.get('poster_path') else None
                     })
-                
-                # Sort by year (simple string sort usually works for YYYY, handle N/A by putting it last)
                 parts.sort(key=lambda x: x['year'] if x['year'] != "N/A" else "9999")
 
                 collection_info = {
@@ -99,11 +120,36 @@ def lambda_handler(event, context):
                 }
             except Exception as e:
                 print(f"Collection fetch error: {e}")
-                # Fallback if collection fetch fails
                 collection_info = {"name": collection_raw.get('name'), "parts": []}
 
         # 3. Production Companies
         production_companies = [c['name'] for c in details.get('production_companies', [])]
+
+        # 4. Trailer
+        videos = details.get('videos', {}).get('results', [])
+        trailer_key = next((v['key'] for v in videos if v['site'] == 'YouTube' and v['type'] == 'Trailer'), None)
+        
+        # 5. Keywords
+        keywords = [k['name'] for k in details.get('keywords', {}).get('keywords', [])][:10]
+
+        # 6. Recommendations
+        recommendations = []
+        for rec in details.get('recommendations', {}).get('results', [])[:10]:
+             r_date = rec.get('release_date', '')
+             recommendations.append({
+                "id": rec.get('id'),
+                "title": rec.get('title'),
+                "year": r_date[:4] if r_date else "N/A",
+                "poster": f"https://image.tmdb.org/t/p/w200{rec.get('poster_path')}" if rec.get('poster_path') else None
+             })
+
+        # 7. Cast (Actors with Photos)
+        cast_data = []
+        for actor in details.get('credits', {}).get('cast', [])[:30]: # Limit to top 30
+            cast_data.append({
+                "name": actor['name'],
+                "profile_path": f"https://image.tmdb.org/t/p/w200{actor.get('profile_path')}" if actor.get('profile_path') else None
+            })
 
         # BUILD REPORT
         mel_report = {
@@ -128,13 +174,16 @@ def lambda_handler(event, context):
             "revenue": f"${details.get('revenue', 0):,}" if details.get('revenue') else "N/A",
             "director": omdb_data.get('Director', 'N/A'),
             "writer": omdb_data.get('Writer', 'N/A'),
-            "cast": [actor['name'] for actor in details.get('credits', {}).get('cast', [])[:4]],
+            "cast": cast_data, # [NEW] List of objects
             "genres": [g['name'] for g in details.get('genres', [])],
             "production": production_companies[:2],
             "producers": producers[:2],
             "cinematographers": cinematographers[:1],
             "composers": composers[:1],
-            "collection": collection_info
+            "collection": collection_info,
+            "trailer_key": trailer_key,
+            "keywords": keywords,
+            "recommendations": recommendations
         }
 
         return build_response(200, mel_report)

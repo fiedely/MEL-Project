@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FlaskConical, Vote, MessageSquareQuote, Loader2 } from 'lucide-react';
+import { FlaskConical, ClipboardList, Stethoscope, Loader2 } from 'lucide-react';
 
 interface LabReportProps {
   loading: boolean;
@@ -31,7 +31,6 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
     return () => clearTimeout(timer);
   }, []);
   
-  // HELPER: Render text with bolding
   const renderRichText = (text: string) => {
     if (!text) return null;
     return text.split('\n').map((paragraph, idx) => (
@@ -63,10 +62,10 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
 
       <div className="p-6 space-y-6">
         
-        {/* SECTION A: LAB FACTS */}
+        {/* SECTION A: OBSERVED METRICS */}
         <div>
            <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
-             <Vote size={14} /> Lab's Facts
+             <ClipboardList size={14} /> Observed Metrics
            </h4>
            <div className="grid grid-cols-2 gap-4">
               
@@ -113,10 +112,10 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
            </div>
         </div>
 
-        {/* SECTION B: LAB RESULTS */}
+        {/* SECTION B: FINAL DIAGNOSIS */}
         <div>
            <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
-             <MessageSquareQuote size={14} /> Lab's Result
+             <Stethoscope size={14} /> Final Diagnosis
            </h4>
            
            <div className="bg-gray-50/80 rounded-2xl p-5 border border-gray-100 relative overflow-hidden min-h-[160px]">
@@ -127,7 +126,6 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
                   </div>
               ) : (
                   <div className="animate-fade-in">
-                      {/* [FIX] Removed Icon/Color logic. Just clean text in primary color. */}
                       <div className="text-center mb-4">
                         <span className="text-lg font-black uppercase tracking-tight text-purple-700 bg-purple-50 px-4 py-2 rounded-lg border border-purple-100 shadow-sm">
                           {data.result.verdict}

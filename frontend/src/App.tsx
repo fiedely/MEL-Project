@@ -25,7 +25,11 @@ export interface MovieData {
   };
   awards?: string;
   plot: string;
-  cast: string[];
+  // [NEW] Updated Cast Interface
+  cast: Array<{
+    name: string;
+    profile_path: string | null;
+  }>;
   director: string;
   budget: string;
   revenue: string;
@@ -44,6 +48,14 @@ export interface MovieData {
       poster: string | null;
     }>;
   };
+  trailer_key?: string;
+  keywords?: string[];
+  recommendations?: Array<{
+    id: number;
+    title: string;
+    year: string;
+    poster: string | null;
+  }>;
   vote_average: number;
   vote_count: number;
 }
@@ -81,6 +93,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [labLoading, setLabLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // State 3: Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   // --- RESET HANDLER (For Navbar) ---
   const handleReset = () => {
@@ -91,6 +107,8 @@ function App() {
     setError('');
     setLoading(false);
     setLabLoading(false);
+    setCurrentPage(1);
+    setTotalPages(0);
   };
 
   const resetState = () => {
@@ -101,22 +119,24 @@ function App() {
     setLabLoading(false);
   };
 
-  const searchMovie = async (e: FormEvent) => {
-    e.preventDefault();
-    if(!query) return;
-
+  const fetchCandidates = async (searchQuery: string, page: number) => {
     resetState();
     setLoading(true);
-
+    
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/search`, {
-        params: { title: query }
+        params: { 
+          title: searchQuery,
+          page: page
+        }
       });
       
       const data = res.data;
 
       if (data.candidates) {
         setCandidates(data.candidates);
+        setTotalPages(data.total_pages);
+        setCurrentPage(data.page);
         setLoading(false);
       } else {
         setMovie(data);
@@ -129,6 +149,17 @@ function App() {
       setError('Subject not found in the database.');
       setLoading(false);
     }
+  };
+
+  const searchMovie = async (e: FormEvent) => {
+    e.preventDefault();
+    if(!query) return;
+    fetchCandidates(query, 1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    fetchCandidates(query, newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const selectMovie = async (id: number) => {
@@ -204,11 +235,13 @@ function App() {
           {candidates && (
             <SearchResults 
               candidates={candidates} 
-              onSelect={selectMovie} 
+              onSelect={selectMovie}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
             />
           )}
 
-          {/* [FIX] Pass onSelect prop so Collection items are clickable */}
           {movie && (
             <MovieCard 
               data={movie} 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Film, Calendar } from 'lucide-react';
+import { Film, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Candidate {
   id: number;
@@ -12,13 +12,22 @@ interface Candidate {
 interface SearchResultsProps {
   candidates: Candidate[];
   onSelect: (id: number) => void;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
-const SearchResults: React.FC<SearchResultsProps> = ({ candidates, onSelect }) => {
+const SearchResults: React.FC<SearchResultsProps> = ({ 
+  candidates, 
+  onSelect, 
+  currentPage, 
+  totalPages, 
+  onPageChange 
+}) => {
   return (
     <div className="w-full max-w-6xl mx-auto px-4 animate-fade-in-up">
       <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 text-center">
-        Did you mean...
+        Search Results
       </h2>
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 items-start">
@@ -26,7 +35,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({ candidates, onSelect }) =
           <button 
             key={movie.id}
             onClick={() => onSelect(movie.id)}
-            // [FIX] Removed 'hover:scale-105'
             className="group relative flex flex-col bg-white rounded-xl md:rounded-2xl shadow-lab overflow-hidden hover:shadow-xl transition-all duration-300 text-left w-full"
           >
             {/* Poster Image */}
@@ -48,7 +56,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({ candidates, onSelect }) =
 
             {/* Info Container */}
             <div className="p-2 md:p-4 w-full">
-              
               <h3 className="font-bold text-sm md:text-lg text-gray-800 leading-tight mb-1 md:mb-2 group-hover:text-lab-blue transition-colors line-clamp-2 md:line-clamp-none">
                 {movie.title}
               </h3>
@@ -65,6 +72,31 @@ const SearchResults: React.FC<SearchResultsProps> = ({ candidates, onSelect }) =
           </button>
         ))}
       </div>
+
+      {/* PAGINATION CONTROLS */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-8">
+          <button 
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="p-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-purple-50 hover:text-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          
+          <span className="text-sm font-bold text-gray-600">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button 
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="p-2 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-purple-50 hover:text-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
