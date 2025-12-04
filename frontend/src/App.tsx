@@ -9,9 +9,10 @@ import LabReport from './components/LabReport';
 import SearchResults from './components/SearchResults';
 
 // --- TYPES ---
-interface MovieData {
-  tmdb_id: number; // [NEW] Added ID field
+export interface MovieData {
+  tmdb_id: number;
   title: string;
+  tagline?: string;
   poster: string;
   rated: string;
   genres: string[];
@@ -22,6 +23,7 @@ interface MovieData {
     rotten_tomatoes_critic: string;
     metacritic: string;
   };
+  awards?: string;
   plot: string;
   cast: string[];
   director: string;
@@ -29,6 +31,19 @@ interface MovieData {
   revenue: string;
   language?: string;
   writer?: string;
+  production?: string[];
+  producers?: string[];
+  cinematographers?: string[];
+  composers?: string[];
+  collection?: {
+    name: string;
+    parts: Array<{
+      id: number;
+      title: string;
+      year: string;
+      poster: string | null;
+    }>;
+  };
   vote_average: number;
   vote_count: number;
 }
@@ -106,7 +121,6 @@ function App() {
       } else {
         setMovie(data);
         setLoading(false);
-        // [FIX] Pass ID and Title
         fetchLabReport(data.tmdb_id, data.title);
       }
 
@@ -129,7 +143,6 @@ function App() {
       const data = res.data;
       setMovie(data);
       setLoading(false);
-      // [FIX] Pass ID and Title
       fetchLabReport(data.tmdb_id, data.title);
 
     } catch (err) {
@@ -139,7 +152,6 @@ function App() {
     }
   };
 
-  // [FIX] Updated signature to accept ID
   const fetchLabReport = async (id: number, title: string) => {
     setLabLoading(true);
     let attempts = 0;
@@ -150,7 +162,6 @@ function App() {
       try {
         attempts++;
         const analyzeRes = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
-            // [FIX] Send 'id' to backend
             params: { 
               id: id,
               title: title 
@@ -197,7 +208,13 @@ function App() {
             />
           )}
 
-          {movie && <MovieCard data={movie} />}
+          {/* [FIX] Pass onSelect prop so Collection items are clickable */}
+          {movie && (
+            <MovieCard 
+              data={movie} 
+              onSelect={selectMovie} 
+            />
+          )}
 
           {movie && (
               <LabReport 

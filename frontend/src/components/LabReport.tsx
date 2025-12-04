@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FlaskConical, Vote, TrendingUp, TrendingDown, Minus, MessageSquareQuote, Loader2, AlertCircle } from 'lucide-react';
+import { FlaskConical, Vote, MessageSquareQuote, Loader2 } from 'lucide-react';
 
 interface LabReportProps {
   loading: boolean;
@@ -21,55 +21,16 @@ interface LabReportProps {
 
 const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
   
-  // 1. LOCAL STATE FOR FAKE DELAY
   const [showTmdb, setShowTmdb] = useState(false);
 
   useEffect(() => {
-    // Start the timer when the component mounts
     const timer = setTimeout(() => {
       setShowTmdb(true);
-    }, 7000); // 7 Second Delay
+    }, 7000); 
 
     return () => clearTimeout(timer);
   }, []);
   
-  // HELPER: Get Dynamic Styles for Creative Verdicts
-  const getVerdictStyle = (verdict: string) => {
-    const v = verdict.toLowerCase();
-    
-    // POSITIVE (Green)
-    if (v.includes('fresh') || v.includes('prime') || v.includes('certified') || v.includes('stable') || v.includes('masterpiece') || v.includes('specimen') || v.includes('catalyst')) {
-      return { 
-        bg: 'bg-emerald-50 text-emerald-600 border-emerald-100', 
-        icon: <TrendingUp size={14} />, 
-        label: verdict 
-      };
-    }
-    // NEGATIVE (Red)
-    if (v.includes('rotten') || v.includes('biohazard') || v.includes('toxic') || v.includes('volatile') || v.includes('decay') || v.includes('failed')) {
-      return { 
-        bg: 'bg-red-50 text-red-600 border-red-100', 
-        icon: <TrendingDown size={14} />, 
-        label: verdict 
-      };
-    }
-    // MIXED (Yellow)
-    if (v.includes('mixed') || v.includes('average') || v.includes('inconclusive') || v.includes('reactant') || v.includes('inert')) {
-      return { 
-        bg: 'bg-yellow-50 text-yellow-600 border-yellow-100', 
-        icon: <Minus size={14} />, 
-        label: verdict 
-      };
-    }
-    
-    // Default (Gray)
-    return { 
-      bg: 'bg-gray-100 text-gray-600 border-gray-200', 
-      icon: <AlertCircle size={14} />, 
-      label: verdict 
-    };
-  };
-
   // HELPER: Render text with bolding
   const renderRichText = (text: string) => {
     if (!text) return null;
@@ -85,8 +46,6 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
       </p>
     ));
   };
-
-  const style = data ? getVerdictStyle(data.result.verdict) : { bg: '', icon: null, label: '' };
 
   return (
     <div className="w-full max-w-lg mx-auto mt-6 bg-white/60 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-white/50 animate-fade-in-up">
@@ -111,19 +70,17 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
            </h4>
            <div className="grid grid-cols-2 gap-4">
               
-              {/* 1. TMDB Stats (WITH FAKE LOADING) */}
+              {/* 1. TMDB Stats */}
               <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 text-center relative overflow-hidden min-h-[120px] flex flex-col items-center justify-center">
                  {!showTmdb ? (
-                    // FAKE LOADING STATE
                     <div className="flex flex-col items-center animate-pulse">
                         <Loader2 size={20} className="text-blue-300 animate-spin mb-2"/>
                         <span className="text-[10px] font-bold text-blue-300">CALCULATING...</span>
                     </div>
                  ) : (
-                    // REVEALED STATE
                     <div className="animate-fade-in">
                         <div className="text-blue-600 font-black text-2xl">
-                            {movie.vote_average.toFixed(1)} {/* REMOVED /10 */}
+                            {movie.vote_average.toFixed(1)}
                         </div>
                         <div className="text-[10px] uppercase font-bold text-blue-300 mt-1">TMDB Score</div>
                         <div className="inline-block bg-white px-2 py-1 rounded-full text-[10px] font-bold text-gray-500 mt-2 shadow-sm border border-gray-100">
@@ -133,16 +90,14 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
                  )}
               </div>
 
-              {/* 2. Popcorn Stats (REAL LOADING) */}
+              {/* 2. Popcorn Stats */}
               <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 text-center relative overflow-hidden min-h-[120px] flex flex-col items-center justify-center">
                  {loading || !data ? (
-                    // REAL LOADING STATE
                     <div className="flex flex-col items-center animate-pulse">
                         <Loader2 size={20} className="text-purple-300 animate-spin mb-2"/>
                         <span className="text-[10px] font-bold text-purple-300">SCANNING...</span>
                     </div>
                  ) : (
-                    // DATA STATE
                     <div className="animate-fade-in">
                         <div className="text-purple-600 font-black text-2xl">
                             {data.facts.popcorn_score}
@@ -158,7 +113,7 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
            </div>
         </div>
 
-        {/* SECTION B: LAB RESULTS (REAL LOADING) */}
+        {/* SECTION B: LAB RESULTS */}
         <div>
            <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
              <MessageSquareQuote size={14} /> Lab's Result
@@ -166,24 +121,19 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
            
            <div className="bg-gray-50/80 rounded-2xl p-5 border border-gray-100 relative overflow-hidden min-h-[160px]">
               {loading || !data ? (
-                  // REAL LOADING STATE
                   <div className="flex flex-col items-center justify-center h-full space-y-3 opacity-60 animate-pulse py-8">
                       <Loader2 size={24} className="text-gray-400 animate-spin" />
                       <p className="text-xs text-gray-400 font-medium">Synthesizing final verdict...</p>
                   </div>
               ) : (
-                  // DATA STATE
                   <div className="animate-fade-in">
-                      {/* Decorative background element */}
-                      <div className={`absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 rounded-full opacity-20 blur-xl ${style.bg.split(' ')[0]}`}></div>
-
-                      {/* DYNAMIC VERDICT BADGE */}
-                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold uppercase tracking-wider mb-4 shadow-sm ${style.bg}`}>
-                        {style.icon ? style.icon : <AlertCircle size={14}/>}
-                        <span>{style.label}</span>
+                      {/* [FIX] Removed Icon/Color logic. Just clean text in primary color. */}
+                      <div className="text-center mb-4">
+                        <span className="text-lg font-black uppercase tracking-tight text-purple-700 bg-purple-50 px-4 py-2 rounded-lg border border-purple-100 shadow-sm">
+                          {data.result.verdict}
+                        </span>
                       </div>
 
-                      {/* THE SUGGESTION */}
                       <div className="text-sm font-medium text-gray-600 leading-relaxed text-justify">
                         {renderRichText(data.result.suggestion)}
                       </div>

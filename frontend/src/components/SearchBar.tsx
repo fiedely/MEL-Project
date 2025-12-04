@@ -1,6 +1,5 @@
-// frontend/src/components/SearchBar.tsx
 import React, { type FormEvent } from 'react';
-import { Search, Loader2, Sparkles, X } from 'lucide-react';
+import { Search, Loader2, X } from 'lucide-react';
 
 interface SearchBarProps {
   query: string;
@@ -13,8 +12,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, onSearch, loadin
   
   const handleClear = () => {
     setQuery('');
-    // Optional: focus the input back?
-    // document.getElementById('search-input')?.focus(); 
   };
 
   return (
@@ -38,7 +35,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, onSearch, loadin
           {/* Action Buttons Container */}
           <div className="absolute right-3 flex items-center gap-2">
             
-            {/* Clear Button (Only shows if query exists) */}
             {query && !loading && (
               <button
                 type="button"
@@ -50,17 +46,17 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, onSearch, loadin
               </button>
             )}
 
-            {/* Analyze/Submit Button */}
+            {/* Analyze/Submit Button [FIX] Dark Purple BG, Magnifying Glass Icon */}
             <button 
               type="submit"
               disabled={loading || !query}
-              className="bg-lab-blue/10 hover:bg-lab-blue text-lab-blue hover:text-white p-3 rounded-xl transition-all disabled:opacity-0 disabled:scale-90 flex items-center justify-center"
+              className="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl transition-all disabled:opacity-0 disabled:scale-90 flex items-center justify-center shadow-md"
               title="Analyze"
             >
               {loading ? (
                 <Loader2 size={20} className="animate-spin" />
               ) : (
-                <Sparkles size={20} />
+                <Search size={20} />
               )}
             </button>
           </div>

@@ -26,7 +26,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({ candidates, onSelect }) =
           <button 
             key={movie.id}
             onClick={() => onSelect(movie.id)}
-            className="group relative flex flex-col bg-white rounded-xl md:rounded-2xl shadow-lab overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-300 text-left w-full"
+            // [FIX] Removed 'hover:scale-105'
+            className="group relative flex flex-col bg-white rounded-xl md:rounded-2xl shadow-lab overflow-hidden hover:shadow-xl transition-all duration-300 text-left w-full"
           >
             {/* Poster Image */}
             <div className="w-full aspect-[2/3] bg-gray-200 relative">
@@ -57,8 +58,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({ candidates, onSelect }) =
                 <span>{movie.year}</span>
               </div>
               
-              {/* Abstract: REMOVED 'hidden sm:block' so it always shows. 
-                  Kept text-[10px] to ensure it fits reasonably well on small screens. */}
               <p className="text-[10px] md:text-xs text-gray-500 leading-relaxed">
                 {movie.overview || "No overview available."}
               </p>
