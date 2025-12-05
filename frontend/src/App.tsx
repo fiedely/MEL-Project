@@ -143,8 +143,6 @@ function App() {
       } else {
         setMovie(data);
         setLoading(false);
-        // [FIX] Pass correct media_type (defaulting to movie if not present)
-        fetchLabReport(data.tmdb_id, data.title, data.media_type || 'movie');
       }
 
     } catch (err) {
@@ -168,6 +166,7 @@ function App() {
   const selectMovie = async (id: number, media_type: string) => {
     setCandidates(null);
     setLoading(true);
+    setLabData(null); 
 
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/search`, {
@@ -177,8 +176,6 @@ function App() {
       const data = res.data;
       setMovie(data);
       setLoading(false);
-      // [FIX] Pass the specific media_type to the Lab
-      fetchLabReport(data.tmdb_id, data.title, media_type);
 
     } catch (err) {
       console.error(err);
@@ -187,8 +184,9 @@ function App() {
     }
   };
 
-  // [FIX] Updated signature to accept media_type
-  const fetchLabReport = async (id: number, title: string, media_type: string) => {
+  const runAnalysis = async () => {
+    if (!movie) return;
+    
     setLabLoading(true);
     let attempts = 0;
     const maxAttempts = 3;
@@ -199,9 +197,9 @@ function App() {
         attempts++;
         const analyzeRes = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
             params: { 
-              id: id,
-              title: title,
-              type: media_type // [FIX] Send type to backend
+              id: movie.tmdb_id,
+              title: movie.title,
+              type: movie.media_type
             }
         });
         setLabData(analyzeRes.data);
@@ -259,7 +257,8 @@ function App() {
               <LabReport 
                 loading={labLoading} 
                 data={labData} 
-                movie={movie} 
+                onAnalyze={runAnalysis}
+                movie={movie} // [FIX] Added missing prop
               />
           )}
           

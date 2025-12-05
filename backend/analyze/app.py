@@ -6,6 +6,7 @@ from google.genai import types
 
 TMDB_API_KEY = os.environ.get('TMDB_API_KEY')
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+OMDB_API_KEY = os.environ.get('OMDB_API_KEY')
 
 def lambda_handler(event, context):
     query_params = event.get('queryStringParameters') or {}
@@ -18,9 +19,10 @@ def lambda_handler(event, context):
     try:
         details = {}
         
+        # --- 1. FETCH TMDB DETAILS ---
         if movie_id:
             endpoint = "tv" if media_type == 'tv' else "movie"
-            details_url = f"https://api.themoviedb.org/3/{endpoint}/{movie_id}?api_key={TMDB_API_KEY}"
+            details_url = f"https://api.themoviedb.org/3/{endpoint}/{movie_id}?api_key={TMDB_API_KEY}&append_to_response=external_ids"
             details = requests.get(details_url).json()
             
             if 'status_code' in details and details['status_code'] == 34:
@@ -40,22 +42,41 @@ def lambda_handler(event, context):
             media_type = best_match.get('media_type', 'movie')
             
             endpoint = "tv" if media_type == 'tv' else "movie"
-            details_url = f"https://api.themoviedb.org/3/{endpoint}/{movie_id}?api_key={TMDB_API_KEY}"
+            details_url = f"https://api.themoviedb.org/3/{endpoint}/{movie_id}?api_key={TMDB_API_KEY}&append_to_response=external_ids"
             details = requests.get(details_url).json()
         
         else:
              return build_response(400, {"error": "Please provide 'id' or 'title'"})
 
-        tmdb_score = details.get('vote_average', 0)
+        # --- 2. FETCH OMDB SCORES ---
+        imdb_id = details.get('external_ids', {}).get('imdb_id')
+        omdb_data = {}
+        if imdb_id and OMDB_API_KEY:
+            try:
+                omdb_url = f"http://www.omdbapi.com/?apikey={OMDB_API_KEY}&i={imdb_id}"
+                omdb_data = requests.get(omdb_url).json()
+            except Exception as e:
+                print(f"OMDb Error: {e}")
+
+        # --- 3. PREPARE DATA ---
+        tmdb_score = f"{round(details.get('vote_average', 0), 1)}/10"
         tmdb_votes = details.get('vote_count', 0)
         
+        imdb_score = omdb_data.get('imdbRating', 'N/A')
+        metascore = omdb_data.get('Metascore', 'N/A')
+        tomatometer = next((i['Value'] for i in omdb_data.get('Ratings', []) if i['Source'] == 'Rotten Tomatoes'), 'N/A')
+
+        genres_list = [g['name'] for g in details.get('genres', [])]
+        genres_str = ", ".join(genres_list) if genres_list else "Unknown Genre"
+
         lab_data = {
             "popcorn_score": "N/A",
             "popcorn_votes": "N/A",
-            "verdict": "Analysis Failed",
-            "suggestion": "Could not connect to AI Lab."
+            "verdict": "Data Inconclusive",
+            "suggestion": "Insufficient data for diagnosis."
         }
 
+        # --- 4. GEMINI 2.5 FLASH ANALYSIS ---
         if GEMINI_API_KEY:
             try:
                 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -70,38 +91,45 @@ def lambda_handler(event, context):
                     year = details.get('release_date', '')[:4]
                     search_context = "Movie"
                 
-                specific_search_query = f"site:rottentomatoes.com the popcornmeter and ratings for '{name}' {search_context} ({year})"
+                specific_search_query = f"popcornmeter and ratings for '{name}' ({year})"
 
-                # [FIX] Enhanced prompt to enforce 'N/A'
                 prompt = f"""
-                Step 1: Use Google Search with exactly this query: "{specific_search_query}"
+                KNOWN DATA (Use as facts):
+                1. TMDB Score (Enthusiasts): {tmdb_score} ({tmdb_votes} votes)
+                2. IMDb Score (General Public): {imdb_score}
+                3. Metascore (Top Critics): {metascore}
+                4. Tomatometer (Critic Consensus): {tomatometer}
+                5. Primary Genres: {genres_str}
 
-                Step 2: Scan the search result and extract ONLY the POPCORNMETER score (as percentage) and number of RATINGS.
-                
-                Step 3: Return VALID JSON only based on the search results.
-                
-                Instructions for data fields:
-                - If Popcornmeter score is found, put percentage (e.g. "95%"). If NOT found, put "N/A".
-                - If Ratings count is found, put the number (e.g. "5,000+ Ratings"). If NOT found, put "N/A" (do NOT put empty string or null).
+                TASK:
+                1. Use Google Search with exactly this query: "{specific_search_query}"
+                2. Scan the search result and extract ONLY the POPCORNMETER score (as percentage) and number of RATINGS.
+                3. Compare the Popcornmeter (Verified Audience) against the KNOWN DATA (Critics & other Audiences).
+                4. Generate a "Clinical Diagnosis".
 
-                Instructions for 'suggestion':
-                1. Write exactly 2 concise paragraphs report separated with newline.
-                2. Include assesment on this {search_context}'s entertainment value based on TMDB and Popcornmeter scores.
-                3. Include suggestions for what type of audience would enjoy this {search_context} the most.
-                4. Use **bold markdown** for 2-4 key phrases.
-                5. Be precise and scientific in tone.
+                STRICT OUTPUT RULES:
+                - **popcorn_score/ratings**: Extract exact numbers or "N/A".
+                
+                - **verdict**: MUST be 1 or 2 words MAX. Use fun scientific/clinical jargon. 
+
+                - **suggestion**: 
+                  - Write exactly 2 paragraphs.
+                  - **DO NOT REPEAT THE SCORES.** We can already see them.
+                  - **TONE:** "Accessible Science." Use lab jargon (Experiment, Data, Analysis, Hypothesis) only for flavor/vibes, but keep the sentences simple, fun, and easy to read. Avoid overly dense academic language.
+                  - Para 1: Analyze the vibe. Do critics and fans agree? Is it a fun popcorn flick or a serious drama?
+                  - Para 2: Recommendation. Who is this experiment for? Explicitly reference the **Genres** ({genres_str}). Use **bold** for 2-4 key traits.
 
                 JSON Schema:
                 {{
-                    "popcorn_score": "e.g. 95% or N/A",
-                    "popcorn_votes": "e.g. 7,000+ Ratings or N/A",
-                    "verdict": "Short 1-2 words creative verdict (e.g. Biohazard, Prime Specimen)",
-                    "suggestion": "2 paragraphs with bold keywords."
+                    "popcorn_score": "String",
+                    "popcorn_votes": "String",
+                    "verdict": "String",
+                    "suggestion": "String"
                 }}
                 """
 
                 response = client.models.generate_content(
-                    model="gemini-2.5-pro",
+                    model="gemini-2.5-flash",
                     contents=prompt,
                     config=types.GenerateContentConfig(tools=[grounding_tool])
                 )
@@ -118,9 +146,10 @@ def lambda_handler(event, context):
                 print(f"⚠️ AI Error: {ai_error}")
                 lab_data["suggestion"] = f"AI Error: {str(ai_error)}"
 
+        # --- BUILD REPORT ---
         report = {
             "facts": {
-                "tmdb_score": f"{round(tmdb_score, 1)}/10",
+                "tmdb_score": tmdb_score,
                 "tmdb_votes": f"{tmdb_votes:,} Votes",
                 "popcorn_score": lab_data.get('popcorn_score', 'N/A'),
                 "popcorn_votes": lab_data.get('popcorn_votes', 'N/A')

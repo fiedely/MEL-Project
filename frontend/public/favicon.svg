@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#ffffff"/>
+  
+  <text x="50%" y="55%" 
+        dominant-baseline="middle" 
+        text-anchor="middle" 
+        font-family="'Montserrat', sans-serif" 
+        font-weight="900" 
+        font-size="200"
+        letter-spacing="-15">
+    <tspan fill="#1f2937">ME</tspan><tspan fill="#9333ea">L</tspan>
+  </text>
+</svg>

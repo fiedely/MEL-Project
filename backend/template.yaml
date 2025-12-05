@@ -3,7 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   MEL - Movie Evaluation Lab Backend Infrastructure
 
-# 1. Global Parameters (FIXED: Added Gemini here)
 Parameters:
   TMDBApiKey:
     Type: String
@@ -57,6 +56,8 @@ Resources:
       Environment:
         Variables:
           TMDB_API_KEY: !Ref TMDBApiKey
+          # [CRITICAL] OMDb Key is required here for the AI to compare scores
+          OMDB_API_KEY: !Ref OMDBApiKey 
           GEMINI_API_KEY: !Ref GEMINIApiKey
       Events:
         AnalyzeEndpoint:
@@ -111,6 +112,7 @@ Resources:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
+        # [FIX] Removed Aliases and ViewerCertificate to use default CloudFront URL
         Enabled: true
         DefaultRootObject: index.html
         Origins:
@@ -128,7 +130,6 @@ Resources:
             QueryString: false
             Cookies:
               Forward: none
-        # Fix for Single Page Apps (React Router): Redirect 404s to index.html
         CustomErrorResponses:
           - ErrorCode: 403
             ResponsePagePath: /index.html
