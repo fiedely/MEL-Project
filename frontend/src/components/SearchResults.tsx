@@ -1,17 +1,10 @@
 import React from 'react';
-import { Film, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
-
-interface Candidate {
-  id: number;
-  title: string;
-  year: string;
-  poster: string | null;
-  overview: string;
-}
+import { Film, Calendar, Tv, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { Candidate } from '../App';
 
 interface SearchResultsProps {
   candidates: Candidate[];
-  onSelect: (id: number) => void;
+  onSelect: (id: number, media_type: string) => void;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -34,7 +27,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
         {candidates.map((movie) => (
           <button 
             key={movie.id}
-            onClick={() => onSelect(movie.id)}
+            onClick={() => onSelect(movie.id, movie.media_type)}
             className="group relative flex flex-col bg-white rounded-xl md:rounded-2xl shadow-lab overflow-hidden hover:shadow-xl transition-all duration-300 text-left w-full"
           >
             {/* Poster Image */}
@@ -47,16 +40,20 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
-                  <Film size={32} />
+                  {movie.media_type === 'tv' ? <Tv size={32} /> : <Film size={32} />}
                 </div>
               )}
-              {/* Hover Overlay */}
+              {/* Type Badge */}
+              <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
+                {movie.media_type === 'tv' ? 'Series' : 'Movie'}
+              </div>
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
             </div>
 
             {/* Info Container */}
             <div className="p-2 md:p-4 w-full">
-              <h3 className="font-bold text-sm md:text-lg text-gray-800 leading-tight mb-1 md:mb-2 group-hover:text-lab-blue transition-colors line-clamp-2 md:line-clamp-none">
+              {/* [FIX] Changed hover color to text-blue-700 to match app theme */}
+              <h3 className="font-bold text-sm md:text-lg text-gray-800 leading-tight mb-1 md:mb-2 group-hover:text-blue-700 transition-colors line-clamp-2 md:line-clamp-none">
                 {movie.title}
               </h3>
               
@@ -65,7 +62,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                 <span>{movie.year}</span>
               </div>
               
-              <p className="text-[10px] md:text-xs text-gray-500 leading-relaxed">
+              <p className="text-[10px] md:text-xs text-gray-500 leading-relaxed line-clamp-3">
                 {movie.overview || "No overview available."}
               </p>
             </div>

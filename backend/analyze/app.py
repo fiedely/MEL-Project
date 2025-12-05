@@ -10,50 +10,45 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 def lambda_handler(event, context):
     query_params = event.get('queryStringParameters') or {}
     movie_title = query_params.get('title')
-    movie_id = query_params.get('id')  # [NEW] Capture ID
+    movie_id = query_params.get('id')
+    media_type = query_params.get('type', 'movie') 
     
-    print(f"🧪 MEL Deep Analysis started for: {movie_title} (ID: {movie_id})")
+    print(f"🧪 MEL Deep Analysis started for: {movie_title} (ID: {movie_id}, Type: {media_type})")
 
     try:
         details = {}
         
-        # --- PATH A: EXACT LOOKUP (If ID provided) ---
         if movie_id:
-            details_url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={TMDB_API_KEY}"
+            endpoint = "tv" if media_type == 'tv' else "movie"
+            details_url = f"https://api.themoviedb.org/3/{endpoint}/{movie_id}?api_key={TMDB_API_KEY}"
             details = requests.get(details_url).json()
             
             if 'status_code' in details and details['status_code'] == 34:
-                 return build_response(404, {"error": "Movie ID not found"})
+                 return build_response(404, {"error": "ID not found"})
 
-        # --- PATH B: SEARCH FALLBACK (If only Title provided) ---
         elif movie_title:
-            tmdb_search_url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={movie_title}"
+            tmdb_search_url = f"https://api.themoviedb.org/3/search/multi?api_key={TMDB_API_KEY}&query={movie_title}"
             search_data = requests.get(tmdb_search_url).json()
             
             if not search_data.get('results'):
-                 return build_response(404, {"error": "Movie not found"})
+                 return build_response(404, {"error": "Subject not found"})
             
-            # Basic matching logic
             results = search_data['results']
             best_match = results[0]
-            for movie in results:
-                if movie['title'].lower().strip() == movie_title.lower().strip():
-                    best_match = movie
-                    break
             
             movie_id = best_match['id']
-            # Fetch full details to get the correct runtime, release date, etc.
-            details_url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={TMDB_API_KEY}"
+            media_type = best_match.get('media_type', 'movie')
+            
+            endpoint = "tv" if media_type == 'tv' else "movie"
+            details_url = f"https://api.themoviedb.org/3/{endpoint}/{movie_id}?api_key={TMDB_API_KEY}"
             details = requests.get(details_url).json()
         
         else:
              return build_response(400, {"error": "Please provide 'id' or 'title'"})
 
-        # --- DATA PREP ---
         tmdb_score = details.get('vote_average', 0)
         tmdb_votes = details.get('vote_count', 0)
         
-        # Lab Data Default
         lab_data = {
             "popcorn_score": "N/A",
             "popcorn_votes": "N/A",
@@ -61,37 +56,45 @@ def lambda_handler(event, context):
             "suggestion": "Could not connect to AI Lab."
         }
 
-        # --- GEMINI 2.5 FLASH ANALYSIS ---
         if GEMINI_API_KEY:
             try:
                 client = genai.Client(api_key=GEMINI_API_KEY)
                 grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
-                # [CRITICAL FIX] Use data from the EXACT movie details
-                movie_name = details.get('title')
-                release_year = details.get('release_date', '')[:4]
+                if media_type == 'tv':
+                    name = details.get('name')
+                    year = details.get('first_air_date', '')[:4]
+                    search_context = "TV Series"
+                else:
+                    name = details.get('title')
+                    year = details.get('release_date', '')[:4]
+                    search_context = "Movie"
                 
-                # The search query now includes the CORRECT year from the specific ID
-                specific_search_query = f"site:rottentomatoes.com the popcornmeter and ratings for '{movie_name}' '({release_year})'"
+                specific_search_query = f"site:rottentomatoes.com the popcornmeter and ratings for '{name}' {search_context} ({year})"
 
+                # [FIX] Enhanced prompt to enforce 'N/A'
                 prompt = f"""
                 Step 1: Use Google Search with exactly this query: "{specific_search_query}"
 
-                Step 2: Scan the search result and extract ONLY the POPCORNMETER score (as percentage) and number of RATINGS (e.g. "7,000+ Ratings")
+                Step 2: Scan the search result and extract ONLY the POPCORNMETER score (as percentage) and number of RATINGS.
                 
                 Step 3: Return VALID JSON only based on the search results.
                 
+                Instructions for data fields:
+                - If Popcornmeter score is found, put percentage (e.g. "95%"). If NOT found, put "N/A".
+                - If Ratings count is found, put the number (e.g. "5,000+ Ratings"). If NOT found, put "N/A" (do NOT put empty string or null).
+
                 Instructions for 'suggestion':
                 1. Write exactly 2 concise paragraphs report separated with newline.
-                2. Include assesment on movie's entertainment value based on TMDB and Popcornmeter scores data.
-                3. Include suggestions for what type of audience would enjoy this movie the most.
+                2. Include assesment on this {search_context}'s entertainment value based on TMDB and Popcornmeter scores.
+                3. Include suggestions for what type of audience would enjoy this {search_context} the most.
                 4. Use **bold markdown** for 2-4 key phrases.
                 5. Be precise and scientific in tone.
 
                 JSON Schema:
                 {{
-                    "popcorn_score": "e.g. 95%",
-                    "popcorn_votes": "e.g. 7,000+ Ratings",
+                    "popcorn_score": "e.g. 95% or N/A",
+                    "popcorn_votes": "e.g. 7,000+ Ratings or N/A",
                     "verdict": "Short 1-2 words creative verdict (e.g. Biohazard, Prime Specimen)",
                     "suggestion": "2 paragraphs with bold keywords."
                 }}
@@ -115,7 +118,6 @@ def lambda_handler(event, context):
                 print(f"⚠️ AI Error: {ai_error}")
                 lab_data["suggestion"] = f"AI Error: {str(ai_error)}"
 
-        # --- BUILD REPORT ---
         report = {
             "facts": {
                 "tmdb_score": f"{round(tmdb_score, 1)}/10",

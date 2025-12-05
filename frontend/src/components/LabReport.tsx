@@ -55,17 +55,20 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
           <FlaskConical size={20} className="text-purple-600" />
         </div>
         <div>
-          <h3 className="font-black text-gray-800 tracking-tight text-lg">MEL's Report</h3>
+          {/* [FIX] Split Title for Lavender 'L' */}
+          <h3 className="font-black text-gray-800 tracking-tight text-lg">
+            ME<span className="text-purple-600">L</span>'s Report
+          </h3>
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Laboratorium Analysis Results</p>
         </div>
       </div>
 
       <div className="p-6 space-y-6">
         
-        {/* SECTION A: OBSERVED METRICS */}
+        {/* SECTION A: OBSERVED METRICS (Lavender) */}
         <div>
-           <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
-             <ClipboardList size={14} /> Observed Metrics
+           <h4 className="text-xs font-bold text-purple-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+             <ClipboardList size={14} className="text-purple-600" /> Observed Metrics
            </h4>
            <div className="grid grid-cols-2 gap-4">
               
@@ -112,10 +115,10 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie }) => {
            </div>
         </div>
 
-        {/* SECTION B: FINAL DIAGNOSIS */}
+        {/* SECTION B: FINAL DIAGNOSIS (Lavender) */}
         <div>
-           <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
-             <Stethoscope size={14} /> Final Diagnosis
+           <h4 className="text-xs font-bold text-purple-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+             <Stethoscope size={14} className="text-purple-600" /> Final Diagnosis
            </h4>
            
            <div className="bg-gray-50/80 rounded-2xl p-5 border border-gray-100 relative overflow-hidden min-h-[160px]">

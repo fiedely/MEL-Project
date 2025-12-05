@@ -11,13 +11,15 @@ import SearchResults from './components/SearchResults';
 // --- TYPES ---
 export interface MovieData {
   tmdb_id: number;
+  media_type: 'movie' | 'tv';
   title: string;
   tagline?: string;
   poster: string;
   rated: string;
   genres: string[];
   year: string;
-  runtime_minutes: number;
+  status?: string;
+  runtime_minutes?: number;
   scores: {
     imdb: string;
     rotten_tomatoes_critic: string;
@@ -25,20 +27,21 @@ export interface MovieData {
   };
   awards?: string;
   plot: string;
-  // [NEW] Updated Cast Interface
   cast: Array<{
     name: string;
     profile_path: string | null;
   }>;
-  director: string;
-  budget: string;
-  revenue: string;
-  language?: string;
+  director?: string | null;
+  creators?: string[];
   writer?: string;
   production?: string[];
+  networks?: string[];
   producers?: string[];
   cinematographers?: string[];
   composers?: string[];
+  budget: string;
+  revenue: string;
+  language?: string;
   collection?: {
     name: string;
     parts: Array<{
@@ -46,6 +49,7 @@ export interface MovieData {
       title: string;
       year: string;
       poster: string | null;
+      media_type?: string;
     }>;
   };
   trailer_key?: string;
@@ -55,6 +59,7 @@ export interface MovieData {
     title: string;
     year: string;
     poster: string | null;
+    media_type?: string;
   }>;
   vote_average: number;
   vote_count: number;
@@ -73,10 +78,11 @@ interface LabData {
   };
 }
 
-interface Candidate {
+export interface Candidate {
   id: number;
   title: string;
   year: string;
+  media_type: 'movie' | 'tv';
   poster: string | null;
   overview: string;
 }
@@ -84,21 +90,17 @@ interface Candidate {
 function App() {
   const [query, setQuery] = useState('');
   
-  // State 1: Data
   const [candidates, setCandidates] = useState<Candidate[] | null>(null);
   const [movie, setMovie] = useState<MovieData | null>(null);
   const [labData, setLabData] = useState<LabData | null>(null);
   
-  // State 2: UI Status
   const [loading, setLoading] = useState(false);
   const [labLoading, setLabLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // State 3: Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
-  // --- RESET HANDLER (For Navbar) ---
   const handleReset = () => {
     setQuery('');
     setMovie(null);
@@ -141,7 +143,8 @@ function App() {
       } else {
         setMovie(data);
         setLoading(false);
-        fetchLabReport(data.tmdb_id, data.title);
+        // [FIX] Pass correct media_type (defaulting to movie if not present)
+        fetchLabReport(data.tmdb_id, data.title, data.media_type || 'movie');
       }
 
     } catch (err) {
@@ -162,28 +165,30 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const selectMovie = async (id: number) => {
+  const selectMovie = async (id: number, media_type: string) => {
     setCandidates(null);
     setLoading(true);
 
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/search`, {
-        params: { id: id }
+        params: { id: id, type: media_type }
       });
 
       const data = res.data;
       setMovie(data);
       setLoading(false);
-      fetchLabReport(data.tmdb_id, data.title);
+      // [FIX] Pass the specific media_type to the Lab
+      fetchLabReport(data.tmdb_id, data.title, media_type);
 
     } catch (err) {
       console.error(err);
-      setError('Failed to load movie details.');
+      setError('Failed to load specimen details.');
       setLoading(false);
     }
   };
 
-  const fetchLabReport = async (id: number, title: string) => {
+  // [FIX] Updated signature to accept media_type
+  const fetchLabReport = async (id: number, title: string, media_type: string) => {
     setLabLoading(true);
     let attempts = 0;
     const maxAttempts = 3;
@@ -195,7 +200,8 @@ function App() {
         const analyzeRes = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
             params: { 
               id: id,
-              title: title 
+              title: title,
+              type: media_type // [FIX] Send type to backend
             }
         });
         setLabData(analyzeRes.data);

@@ -3,61 +3,14 @@ import {
   Clock, Calendar, Film, CircleDollarSign, 
   Activity, Globe, Tag, X, Maximize2, 
   Award, Dna, Microscope, FileText, 
-  FlaskConical, Pipette, Hash 
+  FlaskConical, Pipette, Hash, Tv, Play 
 } from 'lucide-react';
 
-interface MovieData {
-  title: string;
-  tagline?: string;
-  poster: string;
-  rated: string;
-  genres: string[];
-  year: string;
-  runtime_minutes: number;
-  scores: {
-    imdb: string;
-    rotten_tomatoes_critic: string;
-    metacritic: string;
-  };
-  awards?: string;
-  plot: string;
-  cast: Array<{
-    name: string;
-    profile_path: string | null;
-  }>;
-  director: string;
-  budget: string;
-  revenue: string;
-  language?: string;
-  writer?: string;
-  production?: string[];
-  producers?: string[];
-  cinematographers?: string[];
-  composers?: string[];
-  collection?: {
-    name: string;
-    parts: Array<{
-      id: number;
-      title: string;
-      year: string;
-      poster: string | null;
-    }>;
-  };
-  trailer_key?: string;
-  keywords?: string[];
-  recommendations?: Array<{
-    id: number;
-    title: string;
-    year: string;
-    poster: string | null;
-  }>;
-  vote_average: number;
-  vote_count: number;
-}
+import type { MovieData } from '../App';
 
 interface MovieCardProps {
   data: MovieData;
-  onSelect: (id: number) => void;
+  onSelect: (id: number, media_type: string) => void;
 }
 
 const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
@@ -65,6 +18,8 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
   const [showTrailer, setShowTrailer] = useState(false);
 
   if (!data) return null;
+
+  const isTV = data.media_type === 'tv';
 
   const getRevenueColor = () => {
     if (!data.budget || !data.revenue || data.budget === "N/A" || data.revenue === "N/A") {
@@ -100,7 +55,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
             </button>
             <iframe 
               src={`https://www.youtube.com/embed/${data.trailer_key}?autoplay=1`}
-              title="Movie Trailer"
+              title="Trailer"
               className="w-full h-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -150,7 +105,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
                  className="bg-white/20 hover:bg-purple-600 hover:text-white backdrop-blur-md p-2 rounded-full text-white transition-all duration-300 shadow-sm"
                  title="Watch Trailer"
                >
-                 <Film size={20} fill="currentColor" />
+                 <Play size={20} fill="currentColor" />
                </button>
              )}
              <button 
@@ -171,7 +126,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
               </div>
 
               <div className="flex items-center gap-2 text-sm font-medium text-lab-blue/80">
-                <Film size={14} className="shrink-0" />
+                {isTV ? <Tv size={14} className="shrink-0"/> : <Film size={14} className="shrink-0" />}
                 <span>{data.genres.join(', ')}</span>
               </div>
             </div>
@@ -186,97 +141,112 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
             <div className="text-center">
               <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Rated</div>
               <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm">
-                  <Tag size={12} className="text-lab-dark-blue shrink-0"/> {data.rated}
+                  <Tag size={12} className="text-blue-700 shrink-0"/> {data.rated}
               </div>
             </div>
+            
             <div className="text-center border-l border-gray-100 px-1">
-              <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Year</div>
+              <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                {isTV ? 'Timeline' : 'Year'}
+              </div>
               <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm">
-                  <Calendar size={12} className="text-lab-dark-blue shrink-0"/> {data.year}
+                  <Calendar size={12} className="text-blue-700 shrink-0"/> {data.year}
               </div>
             </div>
+
             <div className="text-center border-l border-gray-100 px-1">
-               <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Time</div>
+               <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                 {isTV ? 'Status' : 'Time'}
+               </div>
               <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm">
-                  <Clock size={12} className="text-lab-dark-blue shrink-0"/> {data.runtime_minutes}m
+                  <Clock size={12} className="text-blue-700 shrink-0"/> 
+                  {isTV ? data.status : `${data.runtime_minutes}m`}
               </div>
             </div>
+             
              <div className="text-center border-l border-gray-100 px-1">
                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Type</div>
               <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm">
-                  <Film size={12} className="text-lab-dark-blue shrink-0"/> Movie
+                  {isTV ? <Tv size={12} className="text-blue-700 shrink-0"/> : <Film size={12} className="text-blue-700 shrink-0"/>}
+                  {isTV ? 'Series' : 'Movie'}
               </div>
             </div>
           </div>
           
-          {/* B. EXTERNAL CONSENSUS (Metrics) */}
+          {/* B. EXTERNAL CONSENSUS */}
           <div>
-             <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
+             <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
                <Activity size={14} /> External Consensus
              </h4>
              <div className="grid grid-cols-3 gap-3">
                <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
-                 <div className="text-yellow-500 font-black text-lg flex justify-center items-center gap-1">
+                 {/* [FIX] Blue-600 Value */}
+                 <div className="text-blue-600 font-black text-2xl flex justify-center items-center gap-1">
                    {data.scores.imdb}
                  </div>
-                 <div className="text-[9px] uppercase font-bold text-gray-400 mt-1">IMDb</div>
+                 {/* [FIX] Blue-300 Label (Matches Lab Report Style) */}
+                 <div className="text-[10px] uppercase font-bold text-blue-300 mt-1">IMDb</div>
                </div>
+               
                <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
-                 <div className="text-green-600 font-black text-lg">
+                 <div className="text-blue-600 font-black text-2xl">
                    {data.scores.metacritic}
                  </div>
-                 <div className="text-[9px] uppercase font-bold text-gray-400 mt-1">Meta</div>
+                 <div className="text-[10px] uppercase font-bold text-blue-300 mt-1">Meta</div>
                </div>
+
                <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
-                 <div className="text-red-500 font-black text-lg">
+                 <div className="text-blue-600 font-black text-2xl">
                    {data.scores.rotten_tomatoes_critic}
                  </div>
-                 <div className="text-[9px] uppercase font-bold text-gray-400 mt-1">Tomatometer</div>
+                 <div className="text-[10px] uppercase font-bold text-blue-300 mt-1">Tomatometer</div>
                </div>
              </div>
           </div>
 
-          {/* DISTINCTIONS (Achievements) */}
+          {/* DISTINCTIONS */}
           {data.awards && data.awards !== "N/A" && (
             <div>
-              <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
+              <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <Award size={14} /> Distinctions
               </h4>
-              <div className="bg-lab-lavender/30 p-4 rounded-xl border border-lab-lavender text-sm font-medium text-purple-900 leading-relaxed text-center shadow-sm">
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm font-medium text-blue-900 leading-relaxed text-center shadow-sm">
                 {data.awards}
               </div>
             </div>
           )}
 
-          {/* FISCAL ANALYSIS (Financial) */}
-          <div>
-            <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
-              <CircleDollarSign size={14} /> Fiscal Analysis
-            </h4>
-            <div className="grid grid-cols-2 gap-3">
-               <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
-                 <div className="text-gray-700 font-black text-lg">
-                   {data.budget}
-                 </div>
-                 <div className="text-[9px] uppercase font-bold text-gray-400 mt-1">Budget</div>
-               </div>
-               <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
-                 <div className={`${revenueColor} font-black text-lg`}>
-                   {data.revenue}
-                 </div>
-                 <div className="text-[9px] uppercase font-bold text-gray-400 mt-1">Revenue</div>
-               </div>
+          {/* FISCAL ANALYSIS */}
+          {!isTV && (
+            <div>
+              <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <CircleDollarSign size={14} /> Fiscal Analysis
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
+                  <div className="text-gray-700 font-bold text-lg">
+                    {data.budget}
+                  </div>
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider mt-1">Budget</div>
+                </div>
+                <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
+                  <div className={`${revenueColor} font-bold text-lg`}>
+                    {data.revenue}
+                  </div>
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider mt-1">Revenue</div>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* SPECIMEN ABSTRACT (Abstract) */}
+          {/* SPECIMEN ABSTRACT */}
           <div>
-            <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-2 flex items-center gap-2">
+            <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-2 flex items-center gap-2">
               <FileText size={14} /> Specimen Abstract
             </h4>
             <div className="text-sm leading-relaxed text-gray-600 text-justify font-medium">
               {data.tagline && (
-                <p className="mb-3 italic text-gray-500 border-l-2 border-lab-dark-blue pl-3">
+                <p className="mb-3 italic text-gray-500 border-l-2 border-blue-200 pl-3">
                   "{data.tagline}"
                 </p>
               )}
@@ -288,7 +258,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
                   <Hash size={12} />
                 </div>
                 {data.keywords.map((kw, i) => (
-                  <span key={i} className="px-2 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-wide rounded-md">
+                  <span key={i} className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wide rounded-md">
                     {kw}
                   </span>
                 ))}
@@ -296,47 +266,80 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
             )}
           </div>
 
-          {/* LEAD RESEARCHERS (Key Personnel) */}
+          {/* LEAD RESEARCHERS */}
           <div>
-             <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
+             <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
                <FlaskConical size={14} /> Lead Researchers
              </h4>
              <div className="grid grid-cols-[140px_1fr] gap-y-3 text-sm text-gray-600 px-1">
-                {data.producers && data.producers.length > 0 && (
+                
+                {isTV && data.producers && data.producers.length > 0 && (
                   <>
-                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Producer</span>
+                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Exec. Producer</span>
                     <span className="font-medium text-gray-600">{data.producers.join(', ')}</span>
                   </>
                 )}
-                <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Director</span>
-                <span className="font-medium text-gray-600">{data.director}</span>
-                <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Writer</span>
-                <span className="font-medium text-gray-600">{data.writer || "Not Listed"}</span>
-                {data.cinematographers && data.cinematographers.length > 0 && (
+
+                {isTV && data.creators && data.creators.length > 0 && (
                   <>
-                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Cinematography</span>
-                    <span className="font-medium text-gray-600">{data.cinematographers.join(', ')}</span>
+                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Creators</span>
+                    <span className="font-medium text-gray-600">{data.creators.join(', ')}</span>
                   </>
                 )}
-                {data.composers && data.composers.length > 0 && (
-                  <>
-                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Score</span>
-                    <span className="font-medium text-gray-600">{data.composers.join(', ')}</span>
-                  </>
-                )}
-                {data.production && data.production.length > 0 && (
+
+                {isTV && data.production && data.production.length > 0 && (
                   <>
                     <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Production</span>
                     <span className="font-medium text-gray-600">{data.production.join(', ')}</span>
                   </>
                 )}
+
+                {isTV && data.networks && data.networks.length > 0 && (
+                  <>
+                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Network</span>
+                    <span className="font-medium text-gray-600">{data.networks.join(', ')}</span>
+                  </>
+                )}
+
+                {!isTV && (
+                  <>
+                    {data.producers && data.producers.length > 0 && (
+                      <>
+                        <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Producer</span>
+                        <span className="font-medium text-gray-600">{data.producers.join(', ')}</span>
+                      </>
+                    )}
+                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Director</span>
+                    <span className="font-medium text-gray-600">{data.director}</span>
+                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Writer</span>
+                    <span className="font-medium text-gray-600">{data.writer || "Not Listed"}</span>
+                    {data.cinematographers && data.cinematographers.length > 0 && (
+                      <>
+                        <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Cinematography</span>
+                        <span className="font-medium text-gray-600">{data.cinematographers.join(', ')}</span>
+                      </>
+                    )}
+                    {data.composers && data.composers.length > 0 && (
+                      <>
+                        <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Score</span>
+                        <span className="font-medium text-gray-600">{data.composers.join(', ')}</span>
+                      </>
+                    )}
+                    {data.production && data.production.length > 0 && (
+                      <>
+                        <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Production</span>
+                        <span className="font-medium text-gray-600">{data.production.join(', ')}</span>
+                      </>
+                    )}
+                  </>
+                )}
              </div>
           </div>
 
-          {/* PRINCIPAL SUBJECTS (Actors) */}
+          {/* PRINCIPAL SUBJECTS */}
           {data.cast && data.cast.length > 0 && (
             <div className="pt-6 border-t border-gray-100">
-               <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
+               <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
                  <Microscope size={14} /> Principal Subjects
                </h4>
                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
@@ -360,11 +363,11 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
             </div>
           )}
 
-          {/* LINEAGE & TAXONOMY (Collection) */}
+          {/* LINEAGE & TAXONOMY */}
           {data.collection && data.collection.parts.length > 0 && (
             <div className="pt-6 border-t border-gray-100">
-               <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
-                 <Dna size={14} /> Lineage & Taxonomy
+               <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                 <Dna size={14} /> {isTV ? 'Season Manifest' : 'Lineage & Taxonomy'}
                </h4>
                <div className="mb-2">
                   <h4 className="text-lg font-bold text-gray-800">{data.collection.name}</h4>
@@ -374,8 +377,8 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
                   {data.collection.parts.map(part => (
                      <div 
                         key={part.id} 
-                        onClick={() => onSelect(part.id)}
-                        className="min-w-[100px] w-[100px] flex flex-col gap-1 cursor-pointer group"
+                        onClick={() => part.media_type === 'movie' ? onSelect(part.id, 'movie') : null}
+                        className={`min-w-[100px] w-[100px] flex flex-col gap-1 group ${part.media_type === 'movie' ? 'cursor-pointer' : ''}`}
                      >
                         <div className="w-full aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden relative shadow-sm group-hover:shadow-md transition-all">
                            {part.poster ? (
@@ -386,7 +389,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
                               </div>
                            )}
                         </div>
-                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2 group-hover:text-lab-blue transition-colors" title={part.title}>
+                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2 group-hover:text-blue-700 transition-colors" title={part.title}>
                            {part.title}
                         </span>
                         <span className="text-[10px] text-gray-400">{part.year}</span>
@@ -396,10 +399,10 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
             </div>
           )}
 
-          {/* COMPARATIVE SAMPLES (Recommendations) */}
+          {/* COMPARATIVE SAMPLES */}
           {data.recommendations && data.recommendations.length > 0 && (
             <div className="pt-6 border-t border-gray-100">
-               <h4 className="text-xs font-bold text-lab-dark-blue uppercase tracking-widest mb-3 flex items-center gap-2">
+               <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
                  <Pipette size={14} /> Comparative Samples
                </h4>
                
@@ -407,7 +410,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
                   {data.recommendations.map(rec => (
                      <div 
                         key={rec.id} 
-                        onClick={() => onSelect(rec.id)}
+                        onClick={() => onSelect(rec.id, rec.media_type || 'movie')}
                         className="min-w-[100px] w-[100px] flex flex-col gap-1 cursor-pointer group"
                      >
                         <div className="w-full aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden relative shadow-sm group-hover:shadow-md transition-all">
@@ -419,7 +422,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
                               </div>
                            )}
                         </div>
-                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2 group-hover:text-lab-blue transition-colors" title={rec.title}>
+                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2 group-hover:text-blue-700 transition-colors" title={rec.title}>
                            {rec.title}
                         </span>
                         <span className="text-[10px] text-gray-400">{rec.year}</span>
