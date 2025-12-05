@@ -139,7 +139,6 @@ function App() {
       } else {
         setMovie(data);
         setLoading(false);
-        // Auto-fetch Popcorn for direct hits
         fetchPopcorn(data.tmdb_id, data.media_type); 
       }
     } catch (err) {
@@ -172,7 +171,6 @@ function App() {
       });
       setMovie(res.data);
       setLoading(false);
-      // Auto-fetch Popcorn
       fetchPopcorn(res.data.tmdb_id, res.data.media_type);
 
     } catch (err) {
@@ -204,7 +202,6 @@ function App() {
     setPopcornLoading(false);
   };
 
-  // [FIX] Updated to accept 'season' param
   const fetchSynopsis = async (season?: string) => {
     if (!movie) return;
     setSynopsisLoading(true);
@@ -215,7 +212,7 @@ function App() {
               title: movie.title, 
               type: movie.media_type,
               mode: 'synopsis',
-              season: season // Pass season if available
+              season: season 
             }
         });
         setSynopsisData(res.data);
@@ -223,6 +220,11 @@ function App() {
         console.error("Synopsis fetch error:", err);
     }
     setSynopsisLoading(false);
+  };
+
+  // [NEW] Close Handler
+  const closeSynopsis = () => {
+    setSynopsisData(null);
   };
 
   return (
@@ -265,6 +267,7 @@ function App() {
                   loading={synopsisLoading}
                   synopsis={synopsisData}
                   onDecrypt={fetchSynopsis}
+                  onClose={closeSynopsis} // [NEW] Pass the handler
                   movie={movie}
                 />
             </>

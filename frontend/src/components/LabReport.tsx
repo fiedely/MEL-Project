@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { FileWarning, DoorClosed, Fingerprint, Loader2, X, ShieldAlert, IdCard } from 'lucide-react';
+import { FileWarning, DoorClosed, Fingerprint, Loader2, X, ShieldAlert, IdCard, Lock } from 'lucide-react';
 import type { SynopsisData, MovieData } from '../App';
 
 interface LabReportProps {
   loading: boolean;
   synopsis: SynopsisData | null;
   onDecrypt: (season?: string) => void;
+  onClose: () => void; // [NEW] Close handler
   movie: MovieData;
 }
 
-const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, movie }) => {
+const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onClose, movie }) => {
   
   const [showWarning, setShowWarning] = useState(false);
   const [showSeasonSelect, setShowSeasonSelect] = useState(false);
@@ -59,7 +60,7 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, mov
     <div className="w-full max-w-lg mx-auto mt-6 bg-purple-50/50 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-purple-100 animate-fade-in-up">
       
       {/* HEADER */}
-      <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50">
+      <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50 relative">
         <div className="bg-white p-2 rounded-full shadow-sm">
           <ShieldAlert size={20} className="text-purple-600" />
         </div>
@@ -69,6 +70,12 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, mov
           </h3>
           <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Authorized Personnel Only // Spoilers Inside</p>
         </div>
+        {/* [OPTIONAL] Close button in header as well */}
+        {synopsis && (
+            <button onClick={onClose} className="absolute right-4 top-4 text-purple-400 hover:text-purple-700 transition-colors">
+                <X size={20} />
+            </button>
+        )}
       </div>
 
       <div className="p-6">
@@ -77,7 +84,6 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, mov
         {!loading && !synopsis && !showSeasonSelect && (
           <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
             <div className="bg-white p-4 rounded-full shadow-sm mb-2">
-              {/* [FIX] Changed Icon to DoorClosed */}
               <DoorClosed size={32} className="text-gray-400" />
             </div>
             <div>
@@ -90,7 +96,6 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, mov
               onClick={handleGrantAccess}
               className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-purple-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
             >
-              {/* [FIX] Changed Icon to Fingerprint */}
               <Fingerprint size={18} />
               GRANT LAB ACCESS
             </button>
@@ -101,7 +106,6 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, mov
         {showSeasonSelect && (
              <div className="flex flex-col items-center justify-center py-4 text-center space-y-4 animate-fade-in">
                 <div className="bg-purple-50 p-3 rounded-full mb-1">
-                    {/* [FIX] Changed Icon to IdCard */}
                     <IdCard size={24} className="text-purple-500" />
                 </div>
                 <div>
@@ -159,6 +163,17 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, mov
                <div className="text-sm font-medium text-gray-800 text-justify">
                   {renderRichText(synopsis.detailed_ending)}
                </div>
+            </div>
+
+            {/* [NEW] RE-SEAL BUTTON */}
+            <div className="flex justify-center pt-4">
+                <button 
+                    onClick={onClose}
+                    className="flex items-center gap-2 text-purple-500 hover:text-purple-700 hover:bg-purple-50 px-4 py-2 rounded-full transition-all text-xs font-bold uppercase tracking-widest border border-transparent hover:border-purple-200"
+                >
+                    <Lock size={14} />
+                    Re-seal Archive
+                </button>
             </div>
 
           </div>
