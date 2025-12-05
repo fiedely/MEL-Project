@@ -3,17 +3,26 @@ import {
   Clock, Calendar, Film, CircleDollarSign, 
   Activity, Globe, Tag, X, Maximize2, 
   Award, Dna, Microscope, FileText, 
-  FlaskConical, Pipette, Hash, Tv, Play 
+  FlaskConical, Pipette, Hash, Tv, Play, Loader2, RotateCcw 
 } from 'lucide-react';
 
-import type { MovieData } from '../App';
+import type { MovieData, PopcornData } from '../App';
 
 interface MovieCardProps {
   data: MovieData;
   onSelect: (id: number, media_type: string) => void;
+  popcornData: PopcornData | null;
+  popcornLoading: boolean;
+  onFetchPopcorn: () => void;
 }
 
-const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
+const MovieCard: React.FC<MovieCardProps> = ({ 
+    data, 
+    onSelect, 
+    popcornData, 
+    popcornLoading, 
+    onFetchPopcorn 
+}) => {
   const [showFullImage, setShowFullImage] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
 
@@ -28,7 +37,6 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
     try {
       const budgetNum = parseInt(data.budget.replace(/[^0-9]/g, ''));
       const revenueNum = parseInt(data.revenue.replace(/[^0-9]/g, ''));
-      
       if (isNaN(budgetNum) || isNaN(revenueNum)) return "text-gray-700";
       return revenueNum < budgetNum ? "text-red-500" : "text-emerald-600";
     } catch {
@@ -40,55 +48,26 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
 
   return (
     <>
-      {/* --- TRAILER MODAL --- */}
+      {/* --- MODALS --- */}
       {showTrailer && data.trailer_key && (
-        <div 
-          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setShowTrailer(false)}
-        >
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowTrailer(false)}>
           <div className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl animate-fade-in">
-            <button 
-              className="absolute top-4 right-4 z-10 text-white/70 hover:text-white transition-colors bg-black/50 p-2 rounded-full"
-              onClick={() => setShowTrailer(false)}
-            >
-              <X size={24} />
-            </button>
-            <iframe 
-              src={`https://www.youtube.com/embed/${data.trailer_key}?autoplay=1`}
-              title="Trailer"
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
+            <button className="absolute top-4 right-4 z-10 text-white/70 hover:text-white transition-colors bg-black/50 p-2 rounded-full" onClick={() => setShowTrailer(false)}><X size={24} /></button>
+            <iframe src={`https://www.youtube.com/embed/${data.trailer_key}?autoplay=1`} title="Trailer" className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
           </div>
         </div>
       )}
-
-      {/* --- FULL SCREEN IMAGE MODAL --- */}
       {showFullImage && (
-        <div 
-          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
-          onClick={() => setShowFullImage(false)}
-        >
-          <button 
-            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors"
-            onClick={() => setShowFullImage(false)}
-          >
-            <X size={32} />
-          </button>
-          <img 
-            src={data.poster} 
-            alt={data.title} 
-            className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl animate-fade-in"
-            onClick={(e) => e.stopPropagation()} 
-          />
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer" onClick={() => setShowFullImage(false)}>
+          <button className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors" onClick={() => setShowFullImage(false)}><X size={32} /></button>
+          <img src={data.poster} alt={data.title} className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl animate-fade-in" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
 
       {/* --- MAIN CARD --- */}
       <div className="w-full max-w-lg mx-auto bg-white rounded-3xl shadow-lab overflow-hidden border border-lab-border my-6 transition-all duration-300">
         
-        {/* 1. HEADER (Image) */}
+        {/* 1. HEADER */}
         <div className="relative aspect-[2/3] w-full bg-gray-100 group overflow-hidden">
           <img 
             className="w-full h-full object-cover transition-transform duration-700" 
@@ -97,37 +76,20 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
             onClick={() => setShowFullImage(true)}
             style={{ cursor: 'pointer' }}
           />
-          
           <div className="absolute top-4 right-4 flex gap-2">
              {data.trailer_key && (
-               <button 
-                 onClick={() => setShowTrailer(true)}
-                 className="bg-white/20 hover:bg-purple-600 hover:text-white backdrop-blur-md p-2 rounded-full text-white transition-all duration-300 shadow-sm"
-                 title="Watch Trailer"
-               >
-                 <Play size={20} fill="currentColor" />
-               </button>
+               <button onClick={() => setShowTrailer(true)} className="bg-white/20 hover:bg-purple-600 hover:text-white backdrop-blur-md p-2 rounded-full text-white transition-all duration-300 shadow-sm" title="Watch Trailer"><Play size={20} fill="currentColor" /></button>
              )}
-             <button 
-                onClick={() => setShowFullImage(true)}
-                className="bg-black/40 hover:bg-black/60 backdrop-blur-md p-2 rounded-full text-white/80 hover:text-white transition-all duration-300"
-             >
-                <Maximize2 size={20} />
-             </button>
+             <button onClick={() => setShowFullImage(true)} className="bg-black/40 hover:bg-black/60 backdrop-blur-md p-2 rounded-full text-white/80 hover:text-white transition-all duration-300"><Maximize2 size={20} /></button>
           </div>
-
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-end pointer-events-none">
             <div className="p-6 text-white w-full">
               <h2 className="text-3xl font-black leading-tight tracking-tight mb-2 font-sans">{data.title}</h2>
-              
               <div className="flex items-center gap-2 text-sm font-medium text-lab-blue/80 mb-1">
-                <Globe size={14} className="shrink-0" />
-                <span>{data.language || "English"}</span>
+                <Globe size={14} className="shrink-0" /><span>{data.language || "English"}</span>
               </div>
-
               <div className="flex items-center gap-2 text-sm font-medium text-lab-blue/80">
-                {isTV ? <Tv size={14} className="shrink-0"/> : <Film size={14} className="shrink-0" />}
-                <span>{data.genres.join(', ')}</span>
+                {isTV ? <Tv size={14} className="shrink-0"/> : <Film size={14} className="shrink-0" />}<span>{data.genres.join(', ')}</span>
               </div>
             </div>
           </div>
@@ -138,69 +100,77 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
           
           {/* A. QUICK STATS */}
           <div className="grid grid-cols-4 gap-2 pb-4 border-b border-gray-100">
-            <div className="text-center">
+             <div className="text-center">
               <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Rated</div>
-              <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm">
-                  <Tag size={12} className="text-blue-700 shrink-0"/> {data.rated}
-              </div>
+              <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm"><Tag size={12} className="text-blue-700 shrink-0"/> {data.rated}</div>
             </div>
-            
             <div className="text-center border-l border-gray-100 px-1">
-              <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
-                {isTV ? 'Timeline' : 'Year'}
-              </div>
-              <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm">
-                  <Calendar size={12} className="text-blue-700 shrink-0"/> {data.year}
-              </div>
+              <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">{isTV ? 'Timeline' : 'Year'}</div>
+              <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm"><Calendar size={12} className="text-blue-700 shrink-0"/> {data.year}</div>
             </div>
-
             <div className="text-center border-l border-gray-100 px-1">
-               <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
-                 {isTV ? 'Status' : 'Time'}
-               </div>
-              <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm">
-                  <Clock size={12} className="text-blue-700 shrink-0"/> 
-                  {isTV ? data.status : `${data.runtime_minutes}m`}
-              </div>
+               <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">{isTV ? 'Status' : 'Time'}</div>
+              <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm"><Clock size={12} className="text-blue-700 shrink-0"/> {isTV ? data.status : `${data.runtime_minutes}m`}</div>
             </div>
-             
              <div className="text-center border-l border-gray-100 px-1">
                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Type</div>
-              <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm">
-                  {isTV ? <Tv size={12} className="text-blue-700 shrink-0"/> : <Film size={12} className="text-blue-700 shrink-0"/>}
-                  {isTV ? 'Series' : 'Movie'}
-              </div>
+              <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm">{isTV ? <Tv size={12} className="text-blue-700 shrink-0"/> : <Film size={12} className="text-blue-700 shrink-0"/>}{isTV ? 'Series' : 'Movie'}</div>
             </div>
           </div>
           
-          {/* B. EXTERNAL CONSENSUS */}
+          {/* B. EXTERNAL CONSENSUS (Updated Layout) */}
           <div>
              <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
                <Activity size={14} /> External Consensus
              </h4>
-             <div className="grid grid-cols-3 gap-3">
-               <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
-                 {/* [FIX] Blue-600 Value */}
-                 <div className="text-blue-600 font-black text-2xl flex justify-center items-center gap-1">
-                   {data.scores.imdb}
-                 </div>
-                 {/* [FIX] Blue-300 Label (Matches Lab Report Style) */}
-                 <div className="text-[10px] uppercase font-bold text-blue-300 mt-1">IMDb</div>
-               </div>
+             <div className="flex flex-col gap-3">
                
-               <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
-                 <div className="text-blue-600 font-black text-2xl">
-                   {data.scores.metacritic}
-                 </div>
-                 <div className="text-[10px] uppercase font-bold text-blue-300 mt-1">Meta</div>
+               {/* ROW 1: CRITICS (2 cols) */}
+               <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
+                    <div className="text-blue-600 font-black text-xl">{data.scores.metacritic}</div>
+                    <div className="text-[9px] uppercase font-bold text-blue-300 mt-1">META</div>
+                  </div>
+                  <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
+                    <div className="text-blue-600 font-black text-xl">{data.scores.rotten_tomatoes_critic}</div>
+                    <div className="text-[9px] uppercase font-bold text-blue-300 mt-1">TOMATOMETER</div>
+                  </div>
                </div>
 
-               <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
-                 <div className="text-blue-600 font-black text-2xl">
-                   {data.scores.rotten_tomatoes_critic}
-                 </div>
-                 <div className="text-[10px] uppercase font-bold text-blue-300 mt-1">Tomatometer</div>
+               {/* ROW 2: AUDIENCES (3 cols) */}
+               <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
+                    <div className="text-blue-600 font-black text-xl">{data.scores.imdb}</div>
+                    <div className="text-[9px] uppercase font-bold text-blue-300 mt-1">IMDB</div>
+                  </div>
+                  
+                  <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
+                    <div className="text-blue-600 font-black text-xl">{data.vote_average.toFixed(1)}</div>
+                    <div className="text-[9px] uppercase font-bold text-blue-300 mt-1">TMDB</div>
+                  </div>
+
+                  {/* POPCORNMETER (Lavender) */}
+                  <div className="bg-purple-50 p-2 rounded-xl shadow-sm text-center border border-purple-100 relative overflow-hidden flex flex-col items-center justify-center">
+                      {popcornLoading ? (
+                        <Loader2 size={18} className="text-purple-600 animate-spin" />
+                      ) : !popcornData ? (
+                        <Loader2 size={18} className="text-purple-600 animate-spin" />
+                      ) : popcornData.popcorn_score === "N/A" ? (
+                        <button onClick={onFetchPopcorn} className="flex flex-col items-center justify-center group w-full h-full">
+                             <div className="text-purple-400 font-bold text-lg">N/A</div>
+                             <div className="text-[8px] font-bold text-purple-400 flex items-center gap-1 uppercase mt-1">
+                                 <RotateCcw size={8} /> Retry
+                             </div>
+                        </button>
+                      ) : (
+                        <>
+                            <div className="text-purple-600 font-black text-xl">{popcornData.popcorn_score}</div>
+                            <div className="text-[9px] uppercase font-bold text-purple-300 mt-1 text-center leading-tight">POPCORNMETER</div>
+                        </>
+                      )}
+                  </div>
                </div>
+
              </div>
           </div>
 
@@ -224,15 +194,11 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
               </h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
-                  <div className="text-gray-700 font-bold text-lg">
-                    {data.budget}
-                  </div>
+                  <div className="text-gray-700 font-bold text-lg">{data.budget}</div>
                   <div className="text-[10px] text-gray-400 uppercase tracking-wider mt-1">Budget</div>
                 </div>
                 <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
-                  <div className={`${revenueColor} font-bold text-lg`}>
-                    {data.revenue}
-                  </div>
+                  <div className={`${revenueColor} font-bold text-lg`}>{data.revenue}</div>
                   <div className="text-[10px] text-gray-400 uppercase tracking-wider mt-1">Revenue</div>
                 </div>
               </div>
@@ -246,21 +212,15 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
             </h4>
             <div className="text-sm leading-relaxed text-gray-600 text-justify font-medium">
               {data.tagline && (
-                <p className="mb-3 italic text-gray-500 border-l-2 border-blue-200 pl-3">
-                  "{data.tagline}"
-                </p>
+                <p className="mb-3 italic text-gray-500 border-l-2 border-blue-200 pl-3">"{data.tagline}"</p>
               )}
               {data.plot}
             </div>
             {data.keywords && data.keywords.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-4">
-                <div className="flex items-center text-gray-400 mr-1">
-                  <Hash size={12} />
-                </div>
+                <div className="flex items-center text-gray-400 mr-1"><Hash size={12} /></div>
                 {data.keywords.map((kw, i) => (
-                  <span key={i} className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wide rounded-md">
-                    {kw}
-                  </span>
+                  <span key={i} className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wide rounded-md">{kw}</span>
                 ))}
               </div>
             )}
@@ -272,35 +232,30 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
                <FlaskConical size={14} /> Lead Researchers
              </h4>
              <div className="grid grid-cols-[140px_1fr] gap-y-3 text-sm text-gray-600 px-1">
-                
                 {isTV && data.producers && data.producers.length > 0 && (
                   <>
                     <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Exec. Producer</span>
                     <span className="font-medium text-gray-600">{data.producers.join(', ')}</span>
                   </>
                 )}
-
                 {isTV && data.creators && data.creators.length > 0 && (
                   <>
                     <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Creators</span>
                     <span className="font-medium text-gray-600">{data.creators.join(', ')}</span>
                   </>
                 )}
-
                 {isTV && data.production && data.production.length > 0 && (
                   <>
                     <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Production</span>
                     <span className="font-medium text-gray-600">{data.production.join(', ')}</span>
                   </>
                 )}
-
                 {isTV && data.networks && data.networks.length > 0 && (
                   <>
                     <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Network</span>
                     <span className="font-medium text-gray-600">{data.networks.join(', ')}</span>
                   </>
                 )}
-
                 {!isTV && (
                   <>
                     {data.producers && data.producers.length > 0 && (
@@ -349,21 +304,17 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
                            {actor.profile_path ? (
                               <img src={actor.profile_path} className="w-full h-full object-cover" alt={actor.name} />
                            ) : (
-                              <div className="flex items-center justify-center h-full text-gray-400">
-                                 <Microscope size={20} />
-                              </div>
+                              <div className="flex items-center justify-center h-full text-gray-400"><Microscope size={20} /></div>
                            )}
                         </div>
-                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2">
-                           {actor.name}
-                        </span>
+                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2">{actor.name}</span>
                      </div>
                   ))}
                </div>
             </div>
           )}
 
-          {/* LINEAGE & TAXONOMY */}
+          {/* LINEAGE / COLLECTIONS */}
           {data.collection && data.collection.parts.length > 0 && (
             <div className="pt-6 border-t border-gray-100">
                <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -372,26 +323,13 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
                <div className="mb-2">
                   <h4 className="text-lg font-bold text-gray-800">{data.collection.name}</h4>
                </div>
-               
                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                   {data.collection.parts.map(part => (
-                     <div 
-                        key={part.id} 
-                        onClick={() => part.media_type === 'movie' ? onSelect(part.id, 'movie') : null}
-                        className={`min-w-[100px] w-[100px] flex flex-col gap-1 group ${part.media_type === 'movie' ? 'cursor-pointer' : ''}`}
-                     >
+                     <div key={part.id} onClick={() => part.media_type === 'movie' ? onSelect(part.id, 'movie') : null} className={`min-w-[100px] w-[100px] flex flex-col gap-1 group ${part.media_type === 'movie' ? 'cursor-pointer' : ''}`}>
                         <div className="w-full aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden relative shadow-sm group-hover:shadow-md transition-all">
-                           {part.poster ? (
-                              <img src={part.poster} className="w-full h-full object-cover" alt={part.title} />
-                           ) : (
-                              <div className="flex items-center justify-center h-full text-gray-400">
-                                 <Film size={20} />
-                              </div>
-                           )}
+                           {part.poster ? <img src={part.poster} className="w-full h-full object-cover" alt={part.title} /> : <div className="flex items-center justify-center h-full text-gray-400"><Film size={20} /></div>}
                         </div>
-                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2 group-hover:text-blue-700 transition-colors" title={part.title}>
-                           {part.title}
-                        </span>
+                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2 group-hover:text-blue-700 transition-colors" title={part.title}>{part.title}</span>
                         <span className="text-[10px] text-gray-400">{part.year}</span>
                      </div>
                   ))}
@@ -405,33 +343,19 @@ const MovieCard: React.FC<MovieCardProps> = ({ data, onSelect }) => {
                <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
                  <Pipette size={14} /> Comparative Samples
                </h4>
-               
                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                   {data.recommendations.map(rec => (
-                     <div 
-                        key={rec.id} 
-                        onClick={() => onSelect(rec.id, rec.media_type || 'movie')}
-                        className="min-w-[100px] w-[100px] flex flex-col gap-1 cursor-pointer group"
-                     >
+                     <div key={rec.id} onClick={() => onSelect(rec.id, rec.media_type || 'movie')} className="min-w-[100px] w-[100px] flex flex-col gap-1 cursor-pointer group">
                         <div className="w-full aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden relative shadow-sm group-hover:shadow-md transition-all">
-                           {rec.poster ? (
-                              <img src={rec.poster} className="w-full h-full object-cover" alt={rec.title} />
-                           ) : (
-                              <div className="flex items-center justify-center h-full text-gray-400">
-                                 <Film size={20} />
-                              </div>
-                           )}
+                           {rec.poster ? <img src={rec.poster} className="w-full h-full object-cover" alt={rec.title} /> : <div className="flex items-center justify-center h-full text-gray-400"><Film size={20} /></div>}
                         </div>
-                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2 group-hover:text-blue-700 transition-colors" title={rec.title}>
-                           {rec.title}
-                        </span>
+                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2 group-hover:text-blue-700 transition-colors" title={rec.title}>{rec.title}</span>
                         <span className="text-[10px] text-gray-400">{rec.year}</span>
                      </div>
                   ))}
                </div>
             </div>
           )}
-
         </div>
       </div>
     </>

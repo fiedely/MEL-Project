@@ -1,34 +1,52 @@
-import React from 'react';
-import { FlaskConical, ClipboardList, Stethoscope, Loader2, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileWarning, DoorClosed, Fingerprint, Loader2, X, ShieldAlert, IdCard } from 'lucide-react';
+import type { SynopsisData, MovieData } from '../App';
 
 interface LabReportProps {
   loading: boolean;
-  movie: {
-    vote_average: number;
-    vote_count: number;
-  };
-  data: {
-    facts: {
-      popcorn_score: string;
-      popcorn_votes: string;
-    };
-    result: {
-      verdict: string;
-      suggestion: string;
-    };
-  } | null;
-  onAnalyze: () => void;
+  synopsis: SynopsisData | null;
+  onDecrypt: (season?: string) => void;
+  movie: MovieData;
 }
 
-const LabReport: React.FC<LabReportProps> = ({ loading, data, movie, onAnalyze }) => {
+const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, movie }) => {
   
+  const [showWarning, setShowWarning] = useState(false);
+  const [showSeasonSelect, setShowSeasonSelect] = useState(false);
+  const [selectedSeason, setSelectedSeason] = useState<string | null>(null);
+
+  const isTV = movie.media_type === 'tv';
+
+  const handleGrantAccess = () => {
+    if (isTV) {
+        setShowSeasonSelect(true);
+    } else {
+        setShowWarning(true);
+    }
+  };
+
+  const handleSeasonClick = (seasonName: string) => {
+      setSelectedSeason(seasonName);
+      setShowSeasonSelect(false);
+      setShowWarning(true);
+  };
+
+  const confirmDecrypt = () => {
+      setShowWarning(false);
+      if (isTV && selectedSeason) {
+          onDecrypt(selectedSeason);
+      } else {
+          onDecrypt();
+      }
+  };
+
   const renderRichText = (text: string) => {
     if (!text) return null;
     return text.split('\n').map((paragraph, idx) => (
-      <p key={idx} className="mb-3 last:mb-0">
+      <p key={idx} className="mb-4 last:mb-0 leading-relaxed">
         {paragraph.split(/(\*\*.*?\*\*)/).map((part, i) => 
           part.startsWith('**') && part.endsWith('**') ? (
-            <span key={i} className="font-bold text-gray-800">{part.slice(2, -2)}</span>
+            <span key={i} className="font-bold text-purple-900">{part.slice(2, -2)}</span>
           ) : (
             part
           )
@@ -38,112 +56,154 @@ const LabReport: React.FC<LabReportProps> = ({ loading, data, movie, onAnalyze }
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto mt-6 bg-white/60 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-white/50 animate-fade-in-up">
+    <div className="w-full max-w-lg mx-auto mt-6 bg-purple-50/50 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-purple-100 animate-fade-in-up">
       
       {/* HEADER */}
-      <div className="bg-lab-lavender/30 p-4 flex items-center gap-3 border-b border-lab-lavender/50">
+      <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50">
         <div className="bg-white p-2 rounded-full shadow-sm">
-          <FlaskConical size={20} className="text-purple-600" />
+          <ShieldAlert size={20} className="text-purple-600" />
         </div>
         <div>
           <h3 className="font-black text-gray-800 tracking-tight text-lg">
-            ME<span className="text-purple-600">L</span>'s Report
+            RESTRICTED <span className="text-purple-600">LAB ACCESS</span>
           </h3>
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Laboratorium Analysis Results</p>
+          <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Authorized Personnel Only // Spoilers Inside</p>
         </div>
       </div>
 
       <div className="p-6">
         
-        {/* CASE 1: IDLE / STANDBY */}
-        {!loading && !data && (
-          <div className="flex flex-col items-center justify-center py-8 text-center space-y-4 animate-fade-in">
-            <div className="bg-purple-50 p-4 rounded-full mb-2 shadow-inner">
-              <Sparkles size={32} className="text-purple-400" />
+        {/* STATE 1: LOCKED (Initial) */}
+        {!loading && !synopsis && !showSeasonSelect && (
+          <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
+            <div className="bg-white p-4 rounded-full shadow-sm mb-2">
+              {/* [FIX] Changed Icon to DoorClosed */}
+              <DoorClosed size={32} className="text-gray-400" />
             </div>
             <div>
-              <h4 className="text-gray-800 font-bold text-lg">Lab Standby</h4>
+              <h4 className="text-gray-800 font-bold text-lg">Restricted Area</h4>
               <p className="text-sm text-gray-500 max-w-xs mx-auto mt-1">
-                Specimen loaded. Initiate AI analysis to retrieve Popcornmeter scores and generate final diagnosis.
+                This archive contains classified specimen data (Full Plot & Ending). Explicit authorization is required to proceed.
               </p>
             </div>
             <button 
-              onClick={onAnalyze}
-              className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-purple-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 group"
+              onClick={handleGrantAccess}
+              className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-purple-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
             >
-              <FlaskConical size={18} className="group-hover:rotate-12 transition-transform"/>
-              INITIALIZE ANALYSIS
+              {/* [FIX] Changed Icon to Fingerprint */}
+              <Fingerprint size={18} />
+              GRANT LAB ACCESS
             </button>
           </div>
         )}
 
-        {/* CASE 2: LOADING */}
+        {/* STATE 1.5: SEASON SELECTION (TV Only) */}
+        {showSeasonSelect && (
+             <div className="flex flex-col items-center justify-center py-4 text-center space-y-4 animate-fade-in">
+                <div className="bg-purple-50 p-3 rounded-full mb-1">
+                    {/* [FIX] Changed Icon to IdCard */}
+                    <IdCard size={24} className="text-purple-500" />
+                </div>
+                <div>
+                    <h4 className="text-gray-800 font-bold text-lg">Select Clearance Level</h4>
+                    <p className="text-xs text-gray-500">Choose specific data partition to decrypt.</p>
+                </div>
+                
+                <div className="w-full grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
+                    {movie.collection?.parts.map((season) => (
+                        <button
+                            key={season.id}
+                            onClick={() => handleSeasonClick(season.title)}
+                            className="bg-white border border-purple-100 hover:border-purple-400 hover:bg-purple-50 text-purple-700 font-bold py-2 px-4 rounded-lg text-xs transition-all text-left shadow-sm"
+                        >
+                            {season.title}
+                        </button>
+                    ))}
+                </div>
+                
+                <button onClick={() => setShowSeasonSelect(false)} className="text-xs text-gray-400 hover:text-gray-600 underline mt-2">
+                    Cancel Access
+                </button>
+             </div>
+        )}
+
+        {/* STATE 2: LOADING */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <Loader2 size={40} className="text-purple-600 animate-spin" />
             <span className="text-xs font-bold text-purple-600 uppercase tracking-widest animate-pulse">
-              Running Experiments...
+              Verifying Credentials...
             </span>
           </div>
         )}
 
-        {/* CASE 3: RESULTS DISPLAY */}
-        {!loading && data && (
-          <div className="space-y-6 animate-fade-in">
-            {/* SECTION A: OBSERVED METRICS */}
+        {/* STATE 3: UNLOCKED (Result) */}
+        {!loading && synopsis && (
+          <div className="space-y-8 animate-fade-in">
+            
+            {/* Plot */}
             <div>
-              <h4 className="text-xs font-bold text-purple-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-                <ClipboardList size={14} className="text-purple-600" /> Observed Metrics
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                  {/* TMDB Stats - [FIX] Removed Fake Loading */}
-                  <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 text-center relative overflow-hidden flex flex-col items-center justify-center">
-                        <div className="animate-fade-in">
-                            <div className="text-blue-600 font-black text-2xl">
-                                {movie.vote_average.toFixed(1)}
-                            </div>
-                            <div className="text-[10px] uppercase font-bold text-blue-300 mt-1">TMDB Score</div>
-                            <div className="inline-block bg-white px-2 py-1 rounded-full text-[10px] font-bold text-gray-500 mt-2 shadow-sm border border-gray-100">
-                                {movie.vote_count.toLocaleString()} Votes
-                            </div>
-                        </div>
-                  </div>
-
-                  {/* Popcorn Stats */}
-                  <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 text-center relative overflow-hidden flex flex-col items-center justify-center">
-                      <div className="text-purple-600 font-black text-2xl">
-                          {data.facts.popcorn_score}
-                      </div>
-                      <div className="text-[10px] uppercase font-bold text-purple-300 mt-1">Popcornmeter</div>
-                      <div className="inline-block bg-white px-2 py-1 rounded-full text-[10px] font-bold text-gray-500 mt-2 shadow-sm border border-gray-100">
-                          {data.facts.popcorn_votes}
-                      </div>
-                  </div>
-              </div>
+               <h4 className="text-xs font-bold text-purple-800 uppercase tracking-widest mb-3 flex items-center gap-2 border-b border-purple-100 pb-2">
+                 Specimen Narrative {selectedSeason && <span className="bg-purple-100 text-purple-600 px-2 rounded-md ml-auto normal-case tracking-normal">{selectedSeason}</span>}
+               </h4>
+               <div className="text-sm font-medium text-gray-700 text-justify">
+                  {renderRichText(synopsis.full_plot)}
+               </div>
             </div>
 
-            {/* SECTION B: FINAL DIAGNOSIS */}
-            <div>
-              <h4 className="text-xs font-bold text-purple-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-                <Stethoscope size={14} className="text-purple-600" /> Final Diagnosis
-              </h4>
-              
-              <div className="bg-gray-50/80 rounded-2xl p-5 border border-gray-100 relative overflow-hidden">
-                  <div className="text-center mb-4">
-                    <span className="text-lg font-black uppercase tracking-tight text-purple-700 bg-purple-50 px-4 py-2 rounded-lg border border-purple-100 shadow-sm">
-                      {data.result.verdict}
-                    </span>
-                  </div>
-
-                  <div className="text-sm font-medium text-gray-600 leading-relaxed text-justify">
-                    {renderRichText(data.result.suggestion)}
-                  </div>
-              </div>
+            {/* Ending */}
+            <div className="bg-purple-100/30 p-5 rounded-2xl border border-purple-100">
+               <h4 className="text-xs font-bold text-purple-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                 <FileWarning size={14} /> Final Resolution (Ending)
+               </h4>
+               <div className="text-sm font-medium text-gray-800 text-justify">
+                  {renderRichText(synopsis.detailed_ending)}
+               </div>
             </div>
+
           </div>
         )}
 
       </div>
+
+      {/* WARNING MODAL */}
+      {showWarning && (
+        <div className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+           <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-purple-500 relative">
+              <button 
+                onClick={() => setShowWarning(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+              
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShieldAlert size={32} className="text-purple-600" />
+              </div>
+              
+              <h3 className="text-xl font-black text-gray-900 mb-2">Security Alert</h3>
+              <p className="text-gray-600 text-sm mb-6">
+                You are accessing <strong>Classified Ending Details</strong> {selectedSeason ? `for ${selectedSeason}` : ""}. This action cannot be reversed and constitutes a full spoiler event.
+              </p>
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowWarning(false)}
+                  className="flex-1 py-3 rounded-xl font-bold text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  Deny
+                </button>
+                <button 
+                  onClick={confirmDecrypt}
+                  className="flex-1 py-3 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200 transition-transform active:scale-95"
+                >
+                  Authorize
+                </button>
+              </div>
+           </div>
+        </div>
+      )}
+
     </div>
   );
 };

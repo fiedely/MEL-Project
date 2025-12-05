@@ -65,17 +65,14 @@ export interface MovieData {
   vote_count: number;
 }
 
-interface LabData {
-  facts: {
-    tmdb_score: string;
-    tmdb_votes: string;
-    popcorn_score: string;
-    popcorn_votes: string;
-  };
-  result: {
-    verdict: string;
-    suggestion: string;
-  };
+export interface PopcornData {
+  popcorn_score: string;
+  popcorn_votes: string;
+}
+
+export interface SynopsisData {
+  full_plot: string;
+  detailed_ending: string;
 }
 
 export interface Candidate {
@@ -92,12 +89,15 @@ function App() {
   
   const [candidates, setCandidates] = useState<Candidate[] | null>(null);
   const [movie, setMovie] = useState<MovieData | null>(null);
-  const [labData, setLabData] = useState<LabData | null>(null);
+  
+  const [popcornData, setPopcornData] = useState<PopcornData | null>(null);
+  const [synopsisData, setSynopsisData] = useState<SynopsisData | null>(null);
   
   const [loading, setLoading] = useState(false);
-  const [labLoading, setLabLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [popcornLoading, setPopcornLoading] = useState(false);
+  const [synopsisLoading, setSynopsisLoading] = useState(false);
   
+  const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -105,10 +105,12 @@ function App() {
     setQuery('');
     setMovie(null);
     setCandidates(null);
-    setLabData(null);
+    setPopcornData(null);
+    setSynopsisData(null);
     setError('');
     setLoading(false);
-    setLabLoading(false);
+    setPopcornLoading(false);
+    setSynopsisLoading(false);
     setCurrentPage(1);
     setTotalPages(0);
   };
@@ -117,24 +119,18 @@ function App() {
     setError('');
     setMovie(null);
     setCandidates(null);
-    setLabData(null);
-    setLabLoading(false);
+    setPopcornData(null);
+    setSynopsisData(null);
   };
 
   const fetchCandidates = async (searchQuery: string, page: number) => {
     resetState();
     setLoading(true);
-    
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/search`, {
-        params: { 
-          title: searchQuery,
-          page: page
-        }
+        params: { title: searchQuery, page: page }
       });
-      
       const data = res.data;
-
       if (data.candidates) {
         setCandidates(data.candidates);
         setTotalPages(data.total_pages);
@@ -143,8 +139,9 @@ function App() {
       } else {
         setMovie(data);
         setLoading(false);
+        // Auto-fetch Popcorn for direct hits
+        fetchPopcorn(data.tmdb_id, data.media_type); 
       }
-
     } catch (err) {
       console.error(err);
       setError('Subject not found in the database.');
@@ -166,16 +163,17 @@ function App() {
   const selectMovie = async (id: number, media_type: string) => {
     setCandidates(null);
     setLoading(true);
-    setLabData(null); 
+    setPopcornData(null); 
+    setSynopsisData(null);
 
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/search`, {
         params: { id: id, type: media_type }
       });
-
-      const data = res.data;
-      setMovie(data);
+      setMovie(res.data);
       setLoading(false);
+      // Auto-fetch Popcorn
+      fetchPopcorn(res.data.tmdb_id, res.data.media_type);
 
     } catch (err) {
       console.error(err);
@@ -184,58 +182,65 @@ function App() {
     }
   };
 
-  const runAnalysis = async () => {
-    if (!movie) return;
+  const fetchPopcorn = async (id?: number, type?: string) => {
+    const targetId = id || movie?.tmdb_id;
+    const targetType = type || movie?.media_type;
     
-    setLabLoading(true);
-    let attempts = 0;
-    const maxAttempts = 3;
-    let success = false;
-
-    while (attempts < maxAttempts && !success) {
-      try {
-        attempts++;
-        const analyzeRes = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
+    if (!targetId) return;
+    
+    setPopcornLoading(true);
+    try {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
             params: { 
-              id: movie.tmdb_id,
-              title: movie.title,
-              type: movie.media_type
+              id: targetId,
+              type: targetType,
+              mode: 'score'
             }
         });
-        setLabData(analyzeRes.data);
-        success = true; 
-      } catch (err) {
-        console.error(`Analysis attempt ${attempts} failed:`, err);
-        if (attempts < maxAttempts) {
-             await new Promise(r => setTimeout(r, 1000));
-        }
-      }
+        setPopcornData(res.data);
+    } catch (err) {
+        console.error("Popcorn fetch error:", err);
     }
-    setLabLoading(false);
+    setPopcornLoading(false);
+  };
+
+  // [FIX] Updated to accept 'season' param
+  const fetchSynopsis = async (season?: string) => {
+    if (!movie) return;
+    setSynopsisLoading(true);
+    try {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
+            params: { 
+              id: movie.tmdb_id,
+              title: movie.title, 
+              type: movie.media_type,
+              mode: 'synopsis',
+              season: season // Pass season if available
+            }
+        });
+        setSynopsisData(res.data);
+    } catch (err) {
+        console.error("Synopsis fetch error:", err);
+    }
+    setSynopsisLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-lab-white font-sans selection:bg-lab-lavender selection:text-purple-900 pb-20">
-      
       <Navbar onReset={handleReset} />
-
       <main className="flex flex-col items-center">
-        
         <SearchBar 
           query={query} 
           setQuery={setQuery} 
           onSearch={searchMovie} 
           loading={loading}
         />
-
         {error && (
           <div className="mt-4 flex items-center gap-2 bg-red-50 text-red-500 px-4 py-3 rounded-xl border border-red-100 text-sm font-medium animate-pulse">
               <Info size={18} /> {error}
           </div>
         )}
-
         <div className="w-full px-4 mb-10">
-          
           {candidates && (
             <SearchResults 
               candidates={candidates} 
@@ -245,25 +250,26 @@ function App() {
               onPageChange={handlePageChange}
             />
           )}
-
-          {movie && (
-            <MovieCard 
-              data={movie} 
-              onSelect={selectMovie} 
-            />
-          )}
-
-          {movie && (
-              <LabReport 
-                loading={labLoading} 
-                data={labData} 
-                onAnalyze={runAnalysis}
-                movie={movie} // [FIX] Added missing prop
-              />
-          )}
           
-        </div>
+          {movie && (
+            <>
+                <MovieCard 
+                  data={movie} 
+                  onSelect={selectMovie} 
+                  popcornData={popcornData}
+                  popcornLoading={popcornLoading}
+                  onFetchPopcorn={() => fetchPopcorn(movie.tmdb_id, movie.media_type)}
+                />
 
+                <LabReport 
+                  loading={synopsisLoading}
+                  synopsis={synopsisData}
+                  onDecrypt={fetchSynopsis}
+                  movie={movie}
+                />
+            </>
+          )}
+        </div>
       </main>
     </div>
   );
