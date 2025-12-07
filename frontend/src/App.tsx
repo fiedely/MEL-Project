@@ -60,7 +60,7 @@ export interface SynopsisData {
 
 // [NEW] Composition Data Structure
 export interface CompositionData {
-  emotional: { action: number; fun: number; romance: number; tension: number };
+  emotional: { thrill: number; glee: number; love: number; terror: number };
   narrative: { twist: number; complexity: number; pacing: number; novelty: number };
   content: { gore: number; nudity: number; profanity: number; substance: number };
   technical: { cinematography: number; score: number; performance: number; immersion: number };

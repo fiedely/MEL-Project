@@ -16,33 +16,33 @@ def analyze_composition(client, context, safety_config):
         
         DEFINITIONS FOR SCORING (0=None, 100=Extreme/Maximum):
         
-        1. **EMOTIONAL RESONANCE**
-        - Action: Kinetic energy, chases, fights, explosions. (100=Mad Max)
-        - Fun: Humor, lightheartedness, dopamine inducement. (100=Barbie)
-        - Romance: Love story significance, chemistry, emotional intimacy. (100=The Notebook)
-        - Tension: Suspense, anxiety, nail-biting sequences. (100=Uncut Gems)
+        1. **EMOTIONAL EXPERIENCE**
+        - Thrill: Excitement, adrenaline, kinetic energy, fast pacing. (Action/Adventure focus)
+        - Glee: Amusement, humor, delight, laughter, fun. (Comedy focus)
+        - Love: Romance, emotional intensity, chemistry, longing, deep connection. (Romance/Drama focus)
+        - Terror: Fear, suspense, dread, shock value. (Horror/Thriller focus)
 
         2. **NARRATIVE STRUCTURE**
-        - Twist: Shock value of plot turns, unpredictability. (100=Sixth Sense)
-        - Complexity: Layered storytelling, requires focus, "brain-bending". (100=Tenet)
-        - Pacing: Speed of plot progression. (0=Slow Burn, 100=Breakneck Speed)
-        - Novelty: Originality, uniqueness of concept. (100=Everything Everywhere All At Once)
+        - Twist: Shock value of plot turns, unpredictability.
+        - Complexity: Layered storytelling, requires focus.
+        - Pacing: Speed of plot progression.
+        - Novelty: Originality, uniqueness of concept.
 
-        3. **CONTENT INTENSITY** (Parental Advisory Context)
-        - Gore: Visceral violence, blood, dismemberment. (100=Saw)
-        - Nudity: Sexual content, nudity. (100=Blue is the Warmest Color)
-        - Profanity: Frequency and severity of language. (100=Wolf of Wall Street)
-        - Substance: Drug use, alcohol abuse. (100=Trainspotting)
+        3. **CONTENT INTENSITY** (Parental Advisory)
+        - Gore: Visceral violence, blood.
+        - Nudity: Sexual content, nudity.
+        - Profanity: Frequency/severity of language.
+        - Substance: Drug/alcohol use.
 
         4. **TECHNICAL DIAGNOSTICS**
-        - Cinematography: Visual beauty, color palette, shot composition. (100=Dune)
-        - Score: Impact and memorability of music/soundtrack. (100=Interstellar)
-        - Performance: Acting quality, cast chemistry. (100=The Godfather)
-        - Immersion: World-building, atmosphere, escapism. (100=Avatar)
+        - Cinematography: Visual beauty, shot composition.
+        - Score: Impact of music/soundtrack.
+        - Performance: Acting quality, cast chemistry.
+        - Immersion: World-building, atmosphere.
 
         JSON Schema:
         {{
-            "emotional": {{ "action": Int, "fun": Int, "romance": Int, "tension": Int }},
+            "emotional": {{ "thrill": Int, "glee": Int, "love": Int, "terror": Int }},
             "narrative": {{ "twist": Int, "complexity": Int, "pacing": Int, "novelty": Int }},
             "content": {{ "gore": Int, "nudity": Int, "profanity": Int, "substance": Int }},
             "technical": {{ "cinematography": Int, "score": Int, "performance": Int, "immersion": Int }}

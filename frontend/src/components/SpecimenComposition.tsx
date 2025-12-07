@@ -43,7 +43,7 @@ const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data
   return (
     <div className="w-full max-w-lg mx-auto mt-6 bg-purple-50/50 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-purple-100 animate-fade-in-up">
       
-      {/* HEADER (Matched with LabReport) */}
+      {/* HEADER */}
       <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50">
         <div className="bg-white p-2 rounded-full shadow-sm">
           <FlaskConical size={20} className="text-purple-600" />
@@ -71,10 +71,7 @@ const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data
         {/* STATE 2: INITIAL / FAILSAFE */}
         {!loading && (!data || !data.emotional) && (
            <div className="flex flex-col items-center justify-center py-8">
-              <button 
-                onClick={onAnalyze}
-                className="group flex flex-col items-center gap-3 w-full"
-              >
+              <button onClick={onAnalyze} className="group flex flex-col items-center gap-3 w-full">
                 <div className="bg-white p-4 rounded-full shadow-sm group-hover:scale-110 transition-transform border border-purple-100">
                     <RefreshCw size={24} className="text-purple-500" />
                 </div>
@@ -90,15 +87,15 @@ const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data
         {!loading && data && data.emotional && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
             
-            {/* 1. EMOTIONAL RESONANCE (Violet) */}
+            {/* 1. EMOTIONAL EXPERIENCE (Violet) - [UPDATED] */}
             <div className="bg-white rounded-2xl border border-violet-100 p-5 shadow-sm">
               <h4 className="text-xs font-black text-violet-500 uppercase mb-4 border-b border-violet-50 pb-2 flex items-center gap-2">
-                 Emotional Resonance
+                 Emotional Experience
               </h4>
-              <MetricRow label="Action" value={data.emotional.action} colorBar="bg-violet-400" icon={<Zap/>} />
-              <MetricRow label="Fun" value={data.emotional.fun} colorBar="bg-violet-400" icon={<Smile/>} />
-              <MetricRow label="Romance" value={data.emotional.romance} colorBar="bg-violet-400" icon={<Heart/>} />
-              <MetricRow label="Tension" value={data.emotional.tension} colorBar="bg-violet-400" icon={<Activity/>} />
+              <MetricRow label="Thrill" value={data.emotional.thrill} colorBar="bg-violet-400" icon={<Zap/>} />
+              <MetricRow label="Glee" value={data.emotional.glee} colorBar="bg-violet-400" icon={<Smile/>} />
+              <MetricRow label="Love" value={data.emotional.love} colorBar="bg-violet-400" icon={<Heart/>} />
+              <MetricRow label="Terror" value={data.emotional.terror} colorBar="bg-violet-400" icon={<Activity/>} />
             </div>
 
             {/* 2. NARRATIVE STRUCTURE (Sky Blue) */}
