@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { 
   Clock, Calendar, Film, CircleDollarSign, 
-  Activity, Globe, Tag, X, Maximize2, 
-  Award, Dna, Microscope, FileText, 
-  FlaskConical, Pipette, Hash, Tv, Play, Loader2, RotateCcw 
+  Globe, Tag, X, Maximize2, 
+  Award, Dna, FileText, 
+  Pipette, Hash, Tv, Play 
 } from 'lucide-react';
 
 import type { MovieData, PopcornData } from '../App';
+import ExternalConsensus from './movie/ExternalConsensus';
+import ProductionCredits from './movie/ProductionCredits';
+import CastGrid from './movie/CastGrid';
 
 interface MovieCardProps {
   data: MovieData;
@@ -118,61 +121,13 @@ const MovieCard: React.FC<MovieCardProps> = ({
             </div>
           </div>
           
-          {/* B. EXTERNAL CONSENSUS (Updated Layout) */}
-          <div>
-             <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-               <Activity size={14} /> External Consensus
-             </h4>
-             <div className="flex flex-col gap-3">
-               
-               {/* ROW 1: CRITICS (2 cols) */}
-               <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
-                    <div className="text-blue-600 font-black text-xl">{data.scores.metacritic}</div>
-                    <div className="text-[9px] uppercase font-bold text-blue-300 mt-1">META</div>
-                  </div>
-                  <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
-                    <div className="text-blue-600 font-black text-xl">{data.scores.rotten_tomatoes_critic}</div>
-                    <div className="text-[9px] uppercase font-bold text-blue-300 mt-1">TOMATOMETER</div>
-                  </div>
-               </div>
-
-               {/* ROW 2: AUDIENCES (3 cols) */}
-               <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
-                    <div className="text-blue-600 font-black text-xl">{data.scores.imdb}</div>
-                    <div className="text-[9px] uppercase font-bold text-blue-300 mt-1">IMDB</div>
-                  </div>
-                  
-                  <div className="bg-white p-2 rounded-xl shadow-sm text-center border border-gray-100">
-                    <div className="text-blue-600 font-black text-xl">{data.vote_average.toFixed(1)}</div>
-                    <div className="text-[9px] uppercase font-bold text-blue-300 mt-1">TMDB</div>
-                  </div>
-
-                  {/* POPCORNMETER (Lavender) */}
-                  <div className="bg-purple-50 p-2 rounded-xl shadow-sm text-center border border-purple-100 relative overflow-hidden flex flex-col items-center justify-center">
-                      {popcornLoading ? (
-                        <Loader2 size={18} className="text-purple-600 animate-spin" />
-                      ) : !popcornData ? (
-                        <Loader2 size={18} className="text-purple-600 animate-spin" />
-                      ) : popcornData.popcorn_score === "N/A" ? (
-                        <button onClick={onFetchPopcorn} className="flex flex-col items-center justify-center group w-full h-full">
-                             <div className="text-purple-400 font-bold text-lg">N/A</div>
-                             <div className="text-[8px] font-bold text-purple-400 flex items-center gap-1 uppercase mt-1">
-                                 <RotateCcw size={8} /> Retry
-                             </div>
-                        </button>
-                      ) : (
-                        <>
-                            <div className="text-purple-600 font-black text-xl">{popcornData.popcorn_score}</div>
-                            <div className="text-[9px] uppercase font-bold text-purple-300 mt-1 text-center leading-tight">POPCORNMETER</div>
-                        </>
-                      )}
-                  </div>
-               </div>
-
-             </div>
-          </div>
+          {/* B. EXTERNAL CONSENSUS */}
+          <ExternalConsensus 
+            data={data} 
+            popcornData={popcornData} 
+            popcornLoading={popcornLoading} 
+            onFetchPopcorn={onFetchPopcorn} 
+          />
 
           {/* DISTINCTIONS */}
           {data.awards && data.awards !== "N/A" && (
@@ -227,92 +182,10 @@ const MovieCard: React.FC<MovieCardProps> = ({
           </div>
 
           {/* LEAD RESEARCHERS */}
-          <div>
-             <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-               <FlaskConical size={14} /> Lead Researchers
-             </h4>
-             <div className="grid grid-cols-[140px_1fr] gap-y-3 text-sm text-gray-600 px-1">
-                {isTV && data.producers && data.producers.length > 0 && (
-                  <>
-                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Exec. Producer</span>
-                    <span className="font-medium text-gray-600">{data.producers.join(', ')}</span>
-                  </>
-                )}
-                {isTV && data.creators && data.creators.length > 0 && (
-                  <>
-                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Creators</span>
-                    <span className="font-medium text-gray-600">{data.creators.join(', ')}</span>
-                  </>
-                )}
-                {isTV && data.production && data.production.length > 0 && (
-                  <>
-                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Production</span>
-                    <span className="font-medium text-gray-600">{data.production.join(', ')}</span>
-                  </>
-                )}
-                {isTV && data.networks && data.networks.length > 0 && (
-                  <>
-                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Network</span>
-                    <span className="font-medium text-gray-600">{data.networks.join(', ')}</span>
-                  </>
-                )}
-                {!isTV && (
-                  <>
-                    {data.producers && data.producers.length > 0 && (
-                      <>
-                        <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Producer</span>
-                        <span className="font-medium text-gray-600">{data.producers.join(', ')}</span>
-                      </>
-                    )}
-                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Director</span>
-                    <span className="font-medium text-gray-600">{data.director}</span>
-                    <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Writer</span>
-                    <span className="font-medium text-gray-600">{data.writer || "Not Listed"}</span>
-                    {data.cinematographers && data.cinematographers.length > 0 && (
-                      <>
-                        <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Cinematography</span>
-                        <span className="font-medium text-gray-600">{data.cinematographers.join(', ')}</span>
-                      </>
-                    )}
-                    {data.composers && data.composers.length > 0 && (
-                      <>
-                        <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Score</span>
-                        <span className="font-medium text-gray-600">{data.composers.join(', ')}</span>
-                      </>
-                    )}
-                    {data.production && data.production.length > 0 && (
-                      <>
-                        <span className="font-bold text-gray-400 text-xs uppercase pt-0.5">Production</span>
-                        <span className="font-medium text-gray-600">{data.production.join(', ')}</span>
-                      </>
-                    )}
-                  </>
-                )}
-             </div>
-          </div>
+          <ProductionCredits data={data} />
 
           {/* PRINCIPAL SUBJECTS */}
-          {data.cast && data.cast.length > 0 && (
-            <div className="pt-6 border-t border-gray-100">
-               <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-                 <Microscope size={14} /> Principal Subjects
-               </h4>
-               <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                  {data.cast.map((actor, i) => (
-                     <div key={i} className="min-w-[100px] w-[100px] flex flex-col gap-1">
-                        <div className="w-full aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden relative shadow-sm">
-                           {actor.profile_path ? (
-                              <img src={actor.profile_path} className="w-full h-full object-cover" alt={actor.name} />
-                           ) : (
-                              <div className="flex items-center justify-center h-full text-gray-400"><Microscope size={20} /></div>
-                           )}
-                        </div>
-                        <span className="text-xs font-bold text-gray-700 leading-tight line-clamp-2">{actor.name}</span>
-                     </div>
-                  ))}
-               </div>
-            </div>
-          )}
+          <CastGrid cast={data.cast} />
 
           {/* LINEAGE / COLLECTIONS */}
           {data.collection && data.collection.parts.length > 0 && (
