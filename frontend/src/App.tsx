@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import SearchBar from './components/SearchBar';
 import MovieCard from './components/MovieCard';
 import LabReport from './components/LabReport';
+import SpecimenComposition from './components/SpecimenComposition';
 import SearchResults from './components/SearchResults';
 
 // --- TYPES ---
@@ -27,10 +28,7 @@ export interface MovieData {
   };
   awards?: string;
   plot: string;
-  cast: Array<{
-    name: string;
-    profile_path: string | null;
-  }>;
+  cast: Array<{ name: string; profile_path: string | null; }>;
   director?: string | null;
   creators?: string[];
   writer?: string;
@@ -42,25 +40,10 @@ export interface MovieData {
   budget: string;
   revenue: string;
   language?: string;
-  collection?: {
-    name: string;
-    parts: Array<{
-      id: number;
-      title: string;
-      year: string;
-      poster: string | null;
-      media_type?: string;
-    }>;
-  };
+  collection?: { name: string; parts: Array<{ id: number; title: string; year: string; poster: string | null; media_type?: string; }>; };
   trailer_key?: string;
   keywords?: string[];
-  recommendations?: Array<{
-    id: number;
-    title: string;
-    year: string;
-    poster: string | null;
-    media_type?: string;
-  }>;
+  recommendations?: Array<{ id: number; title: string; year: string; poster: string | null; media_type?: string; }>;
   vote_average: number;
   vote_count: number;
 }
@@ -73,6 +56,14 @@ export interface PopcornData {
 export interface SynopsisData {
   full_plot: string;
   detailed_ending: string;
+}
+
+// [NEW] Composition Data Structure
+export interface CompositionData {
+  emotional: { action: number; fun: number; romance: number; tension: number };
+  narrative: { twist: number; complexity: number; pacing: number; novelty: number };
+  content: { gore: number; nudity: number; profanity: number; substance: number };
+  technical: { cinematography: number; score: number; performance: number; immersion: number };
 }
 
 export interface Candidate {
@@ -92,10 +83,12 @@ function App() {
   
   const [popcornData, setPopcornData] = useState<PopcornData | null>(null);
   const [synopsisData, setSynopsisData] = useState<SynopsisData | null>(null);
+  const [compositionData, setCompositionData] = useState<CompositionData | null>(null); // [NEW]
   
   const [loading, setLoading] = useState(false);
   const [popcornLoading, setPopcornLoading] = useState(false);
   const [synopsisLoading, setSynopsisLoading] = useState(false);
+  const [compositionLoading, setCompositionLoading] = useState(false); // [NEW]
   
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -107,10 +100,12 @@ function App() {
     setCandidates(null);
     setPopcornData(null);
     setSynopsisData(null);
+    setCompositionData(null);
     setError('');
     setLoading(false);
     setPopcornLoading(false);
     setSynopsisLoading(false);
+    setCompositionLoading(false);
     setCurrentPage(1);
     setTotalPages(0);
   };
@@ -121,6 +116,7 @@ function App() {
     setCandidates(null);
     setPopcornData(null);
     setSynopsisData(null);
+    setCompositionData(null);
   };
 
   const fetchCandidates = async (searchQuery: string, page: number) => {
@@ -139,7 +135,9 @@ function App() {
       } else {
         setMovie(data);
         setLoading(false);
+        // Auto-fetch Popcorn and Composition for direct hits
         fetchPopcorn(data.tmdb_id, data.media_type); 
+        fetchComposition(data.tmdb_id, data.media_type);
       }
     } catch (err) {
       console.error(err);
@@ -164,6 +162,7 @@ function App() {
     setLoading(true);
     setPopcornData(null); 
     setSynopsisData(null);
+    setCompositionData(null);
 
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/search`, {
@@ -171,7 +170,9 @@ function App() {
       });
       setMovie(res.data);
       setLoading(false);
+      // Auto-fetch Popcorn & Composition
       fetchPopcorn(res.data.tmdb_id, res.data.media_type);
+      fetchComposition(res.data.tmdb_id, res.data.media_type);
 
     } catch (err) {
       console.error(err);
@@ -183,23 +184,36 @@ function App() {
   const fetchPopcorn = async (id?: number, type?: string) => {
     const targetId = id || movie?.tmdb_id;
     const targetType = type || movie?.media_type;
-    
     if (!targetId) return;
-    
     setPopcornLoading(true);
     try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
-            params: { 
-              id: targetId,
-              type: targetType,
-              mode: 'score'
-            }
+            params: { id: targetId, type: targetType, mode: 'score' }
         });
         setPopcornData(res.data);
-    } catch (err) {
-        console.error("Popcorn fetch error:", err);
-    }
+    } catch (err) { console.error(err); }
     setPopcornLoading(false);
+  };
+
+  // [NEW] Composition Fetcher
+  const fetchComposition = async (id?: number, type?: string) => {
+    const targetId = id || movie?.tmdb_id;
+    const targetType = type || movie?.media_type;
+    if (!targetId) return;
+    
+    setCompositionLoading(true);
+    try {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
+            params: { 
+              id: targetId, 
+              title: movie?.title, // Title helps context
+              type: targetType, 
+              mode: 'composition'
+            }
+        });
+        setCompositionData(res.data);
+    } catch (err) { console.error(err); }
+    setCompositionLoading(false);
   };
 
   const fetchSynopsis = async (season?: string) => {
@@ -208,35 +222,22 @@ function App() {
     try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
             params: { 
-              id: movie.tmdb_id,
-              title: movie.title, 
-              type: movie.media_type,
-              mode: 'synopsis',
-              season: season 
+              id: movie.tmdb_id, title: movie.title, type: movie.media_type, 
+              mode: 'synopsis', season: season 
             }
         });
         setSynopsisData(res.data);
-    } catch (err) {
-        console.error("Synopsis fetch error:", err);
-    }
+    } catch (err) { console.error(err); }
     setSynopsisLoading(false);
   };
 
-  // [NEW] Close Handler
-  const closeSynopsis = () => {
-    setSynopsisData(null);
-  };
+  const closeSynopsis = () => { setSynopsisData(null); };
 
   return (
     <div className="min-h-screen bg-lab-white font-sans selection:bg-lab-lavender selection:text-purple-900 pb-20">
       <Navbar onReset={handleReset} />
       <main className="flex flex-col items-center">
-        <SearchBar 
-          query={query} 
-          setQuery={setQuery} 
-          onSearch={searchMovie} 
-          loading={loading}
-        />
+        <SearchBar query={query} setQuery={setQuery} onSearch={searchMovie} loading={loading} />
         {error && (
           <div className="mt-4 flex items-center gap-2 bg-red-50 text-red-500 px-4 py-3 rounded-xl border border-red-100 text-sm font-medium animate-pulse">
               <Info size={18} /> {error}
@@ -244,13 +245,7 @@ function App() {
         )}
         <div className="w-full px-4 mb-10">
           {candidates && (
-            <SearchResults 
-              candidates={candidates} 
-              onSelect={selectMovie}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+            <SearchResults candidates={candidates} onSelect={selectMovie} currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
           )}
           
           {movie && (
@@ -262,12 +257,19 @@ function App() {
                   popcornLoading={popcornLoading}
                   onFetchPopcorn={() => fetchPopcorn(movie.tmdb_id, movie.media_type)}
                 />
+                
+                {/* [NEW] Mel's Report / Composition */}
+                <SpecimenComposition 
+                   loading={compositionLoading}
+                   data={compositionData}
+                   onAnalyze={() => fetchComposition(movie.tmdb_id, movie.media_type)}
+                />
 
                 <LabReport 
                   loading={synopsisLoading}
                   synopsis={synopsisData}
                   onDecrypt={fetchSynopsis}
-                  onClose={closeSynopsis} // [NEW] Pass the handler
+                  onClose={closeSynopsis}
                   movie={movie}
                 />
             </>
