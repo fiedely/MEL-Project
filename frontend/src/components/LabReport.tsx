@@ -60,7 +60,6 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
   return (
     <>
       {/* --- MAIN CARD --- */}
-      {/* [FIX] Changed mt-6 to mt-2 to align with SearchBar */}
       <div className="w-full max-w-lg mx-auto mt-2 bg-purple-50/50 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-purple-100 animate-fade-in-up">
         
         {/* HEADER (Always Visible) */}
@@ -69,10 +68,13 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
             <ShieldAlert size={20} className="text-purple-600" />
           </div>
           <div>
+            {/* [FIX] Removed lavender color span, now solid gray */}
             <h3 className="font-black text-gray-800 tracking-tight text-lg">
-              RESTRICTED <span className="text-purple-600">LAB ACCESS</span>
+              RESTRICTED LAB ACCESS
             </h3>
-            <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Authorized Personnel Only // Spoilers Inside</p>
+            <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">
+              AUTHORIZED PERSONNEL ONLY
+            </p>
           </div>
           {/* Close button */}
           {synopsis && (
@@ -91,7 +93,7 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
               </div>
           )}
 
-          {/* STATE 1: LOCKED (Initial) - Only if Movie exists and no EmptyState */}
+          {/* STATE 1: LOCKED (Initial) */}
           {!loading && !emptyState && !synopsis && !showSeasonSelect && movie && (
             <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
               <div className="bg-white p-4 rounded-full shadow-sm mb-2">

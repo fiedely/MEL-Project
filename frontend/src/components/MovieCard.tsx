@@ -12,9 +12,9 @@ import ProductionCredits from './movie/ProductionCredits';
 import CastGrid from './movie/CastGrid';
 
 interface MovieCardProps {
-  data: MovieData | null; // [UPDATED] Can be null
-  searchBar: React.ReactNode; // [NEW] Slot for SearchBar
-  emptyState?: React.ReactNode; // [NEW] Slot for EmptyState
+  data: MovieData | null;
+  searchBar: React.ReactNode;
+  emptyState?: React.ReactNode;
   onSelect: (id: number, media_type: string) => void;
   popcornData: PopcornData | null;
   popcornLoading: boolean;
@@ -33,7 +33,6 @@ const MovieCard: React.FC<MovieCardProps> = ({
   const [showFullImage, setShowFullImage] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
 
-  // Helper logic (safe to run even if data is null, as long as we guard usage)
   const isTV = data?.media_type === 'tv';
 
   const getRevenueColor = () => {
@@ -54,7 +53,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
 
   return (
     <>
-      {/* --- MODALS (Only render if data exists) --- */}
+      {/* --- MODALS --- */}
       {data && showTrailer && data.trailer_key && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowTrailer(false)}>
           <div className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl animate-fade-in">
@@ -73,14 +72,15 @@ const MovieCard: React.FC<MovieCardProps> = ({
       {/* --- MAIN CONTAINER --- */}
       <div className="w-full max-w-lg mx-auto bg-white rounded-3xl shadow-lab overflow-hidden border border-lab-border mt-2 mb-6 transition-all duration-300">
         
-        {/* 1. HEADER (Always Visible) */}
+        {/* HEADER */}
         <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50">
           <div className="bg-white p-2 rounded-full shadow-sm">
             <Film size={20} className="text-purple-600" />
           </div>
           <div>
+            {/* [FIX] Removed lavender color span, now solid gray */}
             <h3 className="font-black text-gray-800 tracking-tight text-lg">
-              SPECIMEN <span className="text-purple-600">EXAMINATION</span>
+              SPECIMEN EXAMINATION
             </h3>
             <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">
               Primary Data Archive
@@ -88,12 +88,12 @@ const MovieCard: React.FC<MovieCardProps> = ({
           </div>
         </div>
 
-        {/* 2. SEARCH BAR AREA (Always Visible) */}
+        {/* SEARCH BAR AREA */}
         <div className="p-4 bg-gray-50/50 border-b border-gray-100">
             {searchBar}
         </div>
 
-        {/* 3. CONTENT AREA */}
+        {/* CONTENT AREA */}
         {!data && emptyState && (
             <div className="p-6">
                 {emptyState}

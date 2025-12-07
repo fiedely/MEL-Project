@@ -15,7 +15,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, onSearch, loadin
   };
 
   return (
-    // [FIX] Removed margins (mt/mb/mx) and padding (px) to fit inside Card
     <div className="w-full relative group">
       <form onSubmit={onSearch} className="relative">
         {/* Glow Effect */}
@@ -29,7 +28,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, onSearch, loadin
             type="text" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for a movie title..." 
+            // [FIX] Updated placeholder text
+            placeholder="Search a title..." 
             className="w-full pl-12 pr-24 py-4 rounded-2xl border-2 border-transparent bg-white shadow-lab focus:border-lab-lavender focus:ring-0 outline-none text-gray-700 text-lg transition-all placeholder:text-gray-400 font-medium"
           />
           
