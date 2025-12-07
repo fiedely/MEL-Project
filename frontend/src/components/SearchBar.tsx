@@ -15,8 +15,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, onSearch, loadin
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-8 mb-6 px-4">
-      <form onSubmit={onSearch} className="relative group">
+    // [FIX] Removed margins (mt/mb/mx) and padding (px) to fit inside Card
+    <div className="w-full relative group">
+      <form onSubmit={onSearch} className="relative">
         {/* Glow Effect */}
         <div className="absolute inset-0 bg-lab-lavender blur-2xl opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
         
@@ -46,7 +47,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, onSearch, loadin
               </button>
             )}
 
-            {/* Analyze/Submit Button [FIX] Dark Purple BG, Magnifying Glass Icon */}
+            {/* Analyze/Submit Button */}
             <button 
               type="submit"
               disabled={loading || !query}

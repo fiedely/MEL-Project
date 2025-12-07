@@ -7,16 +7,17 @@ interface LabReportProps {
   synopsis: SynopsisData | null;
   onDecrypt: (season?: string) => void;
   onClose: () => void;
-  movie: MovieData;
+  movie: MovieData | null;
+  emptyState?: React.ReactNode;
 }
 
-const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onClose, movie }) => {
+const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onClose, movie, emptyState }) => {
   
   const [showWarning, setShowWarning] = useState(false);
   const [showSeasonSelect, setShowSeasonSelect] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState<string | null>(null);
 
-  const isTV = movie.media_type === 'tv';
+  const isTV = movie?.media_type === 'tv';
 
   const handleGrantAccess = () => {
     if (isTV) {
@@ -59,9 +60,10 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
   return (
     <>
       {/* --- MAIN CARD --- */}
-      <div className="w-full max-w-lg mx-auto mt-6 bg-purple-50/50 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-purple-100 animate-fade-in-up">
+      {/* [FIX] Changed mt-6 to mt-2 to align with SearchBar */}
+      <div className="w-full max-w-lg mx-auto mt-2 bg-purple-50/50 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-purple-100 animate-fade-in-up">
         
-        {/* HEADER */}
+        {/* HEADER (Always Visible) */}
         <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50 relative">
           <div className="bg-white p-2 rounded-full shadow-sm">
             <ShieldAlert size={20} className="text-purple-600" />
@@ -82,8 +84,15 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
 
         <div className="p-6">
           
-          {/* STATE 1: LOCKED (Initial) */}
-          {!loading && !synopsis && !showSeasonSelect && (
+          {/* STATE 0: NO MOVIE SELECTED */}
+          {!loading && emptyState && (
+              <div className="py-4">
+                  {emptyState}
+              </div>
+          )}
+
+          {/* STATE 1: LOCKED (Initial) - Only if Movie exists and no EmptyState */}
+          {!loading && !emptyState && !synopsis && !showSeasonSelect && movie && (
             <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
               <div className="bg-white p-4 rounded-full shadow-sm mb-2">
                 <DoorClosed size={32} className="text-gray-400" />
@@ -105,7 +114,7 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
           )}
 
           {/* STATE 1.5: SEASON SELECTION (TV Only) */}
-          {showSeasonSelect && (
+          {showSeasonSelect && movie && (
               <div className="flex flex-col items-center justify-center py-4 text-center space-y-4 animate-fade-in">
                   <div className="bg-purple-50 p-3 rounded-full mb-1">
                       <IdCard size={24} className="text-purple-500" />
@@ -184,7 +193,7 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
         </div>
       </div>
 
-      {/* --- WARNING MODAL (NOW OUTSIDE THE ANIMATED DIV) --- */}
+      {/* --- WARNING MODAL --- */}
       {showWarning && (
         <div className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
            <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-purple-500 relative">

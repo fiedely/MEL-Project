@@ -1,13 +1,15 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useRef, useLayoutEffect, type FormEvent } from 'react';
 import axios from 'axios';
-import { Info } from 'lucide-react'; 
+import { Info, Film, FlaskConical, ShieldAlert } from 'lucide-react'; 
 
 import Navbar from './components/Navbar';
 import SearchBar from './components/SearchBar';
 import MovieCard from './components/MovieCard';
 import LabReport from './components/LabReport';
 import SpecimenComposition from './components/SpecimenComposition';
-import SearchResults from './components/SearchResults';
+import BottomNav from './components/BottomNav';
+import SearchResultsModal from './components/SearchResultsModal';
+import EmptyState from './components/EmptyState';
 
 // --- TYPES ---
 export interface MovieData {
@@ -58,7 +60,6 @@ export interface SynopsisData {
   detailed_ending: string;
 }
 
-// [NEW] Composition Data Structure
 export interface CompositionData {
   emotional: { thrill: number; glee: number; love: number; terror: number };
   narrative: { twist: number; complexity: number; pacing: number; novelty: number };
@@ -75,24 +76,51 @@ export interface Candidate {
   overview: string;
 }
 
+type Tab = 'report' | 'detail' | 'lab';
+
 function App() {
+  // Navigation State
+  const [activeTab, setActiveTab] = useState<Tab>('detail');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // [NEW] Scroll Position Persistence
+  const scrollPositions = useRef<Record<Tab, number>>({
+    detail: 0,
+    report: 0,
+    lab: 0
+  });
+
+  // Data State
   const [query, setQuery] = useState('');
-  
   const [candidates, setCandidates] = useState<Candidate[] | null>(null);
   const [movie, setMovie] = useState<MovieData | null>(null);
   
   const [popcornData, setPopcornData] = useState<PopcornData | null>(null);
   const [synopsisData, setSynopsisData] = useState<SynopsisData | null>(null);
-  const [compositionData, setCompositionData] = useState<CompositionData | null>(null); // [NEW]
+  const [compositionData, setCompositionData] = useState<CompositionData | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [popcornLoading, setPopcornLoading] = useState(false);
   const [synopsisLoading, setSynopsisLoading] = useState(false);
-  const [compositionLoading, setCompositionLoading] = useState(false); // [NEW]
+  const [compositionLoading, setCompositionLoading] = useState(false);
   
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+
+  // [NEW] Custom Tab Switcher to save/restore scroll
+  const switchTab = (newTab: Tab) => {
+    // 1. Save current scroll position
+    scrollPositions.current[activeTab] = window.scrollY;
+    // 2. Change state
+    setActiveTab(newTab);
+  };
+
+  // [NEW] Restore scroll position immediately after render
+  useLayoutEffect(() => {
+    const savedPosition = scrollPositions.current[activeTab];
+    window.scrollTo({ top: savedPosition, behavior: 'instant' });
+  }, [activeTab]);
 
   const handleReset = () => {
     setQuery('');
@@ -108,6 +136,12 @@ function App() {
     setCompositionLoading(false);
     setCurrentPage(1);
     setTotalPages(0);
+    setIsSearchOpen(false);
+    
+    // Reset scroll history
+    scrollPositions.current = { detail: 0, report: 0, lab: 0 };
+    setActiveTab('detail'); 
+    window.scrollTo(0, 0);
   };
 
   const resetState = () => {
@@ -131,19 +165,16 @@ function App() {
         setCandidates(data.candidates);
         setTotalPages(data.total_pages);
         setCurrentPage(data.page);
-        setLoading(false);
+        setIsSearchOpen(true); 
       } else {
         setMovie(data);
-        setLoading(false);
-        // Auto-fetch Popcorn and Composition for direct hits
-        fetchPopcorn(data.tmdb_id, data.media_type); 
-        fetchComposition(data.tmdb_id, data.media_type);
+        handleDirectSelection(data);
       }
     } catch (err) {
       console.error(err);
       setError('Subject not found in the database.');
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const searchMovie = async (e: FormEvent) => {
@@ -154,31 +185,42 @@ function App() {
 
   const handlePageChange = (newPage: number) => {
     fetchCandidates(query, newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDirectSelection = (movieData: MovieData) => {
+      // Reset scroll history for new movie
+      scrollPositions.current = { detail: 0, report: 0, lab: 0 };
+      window.scrollTo(0, 0);
+
+      fetchPopcorn(movieData.tmdb_id, movieData.media_type); 
+      fetchComposition(movieData.tmdb_id, movieData.media_type, movieData.title);
   };
 
   const selectMovie = async (id: number, media_type: string) => {
+    setIsSearchOpen(false); 
     setCandidates(null);
     setLoading(true);
+    
     setPopcornData(null); 
     setSynopsisData(null);
     setCompositionData(null);
+    
+    // Reset scroll history for new movie
+    scrollPositions.current = { detail: 0, report: 0, lab: 0 };
+    setActiveTab('detail'); 
+    window.scrollTo(0, 0);
 
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/search`, {
         params: { id: id, type: media_type }
       });
       setMovie(res.data);
-      setLoading(false);
-      // Auto-fetch Popcorn & Composition
-      fetchPopcorn(res.data.tmdb_id, res.data.media_type);
-      fetchComposition(res.data.tmdb_id, res.data.media_type);
-
+      handleDirectSelection(res.data);
     } catch (err) {
       console.error(err);
       setError('Failed to load specimen details.');
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const fetchPopcorn = async (id?: number, type?: string) => {
@@ -195,10 +237,10 @@ function App() {
     setPopcornLoading(false);
   };
 
-  // [NEW] Composition Fetcher
-  const fetchComposition = async (id?: number, type?: string) => {
+  const fetchComposition = async (id?: number, type?: string, title?: string) => {
     const targetId = id || movie?.tmdb_id;
     const targetType = type || movie?.media_type;
+    const targetTitle = title || movie?.title;
     if (!targetId) return;
     
     setCompositionLoading(true);
@@ -206,7 +248,7 @@ function App() {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/analyze`, {
             params: { 
               id: targetId, 
-              title: movie?.title, // Title helps context
+              title: targetTitle, 
               type: targetType, 
               mode: 'composition'
             }
@@ -233,49 +275,96 @@ function App() {
 
   const closeSynopsis = () => { setSynopsisData(null); };
 
-  return (
-    <div className="min-h-screen bg-lab-white font-sans selection:bg-lab-lavender selection:text-purple-900 pb-20">
+return (
+    <div className="min-h-screen bg-lab-white font-sans selection:bg-lab-lavender selection:text-purple-900">
       <Navbar onReset={handleReset} />
-      <main className="flex flex-col items-center">
-        <SearchBar query={query} setQuery={setQuery} onSearch={searchMovie} loading={loading} />
-        {error && (
-          <div className="mt-4 flex items-center gap-2 bg-red-50 text-red-500 px-4 py-3 rounded-xl border border-red-100 text-sm font-medium animate-pulse">
-              <Info size={18} /> {error}
-          </div>
-        )}
-        <div className="w-full px-4 mb-10">
-          {candidates && (
-            <SearchResults candidates={candidates} onSelect={selectMovie} currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
-          )}
-          
-          {movie && (
-            <>
-                <MovieCard 
-                  data={movie} 
-                  onSelect={selectMovie} 
-                  popcornData={popcornData}
-                  popcornLoading={popcornLoading}
-                  onFetchPopcorn={() => fetchPopcorn(movie.tmdb_id, movie.media_type)}
-                />
-                
-                {/* [NEW] Mel's Report / Composition */}
-                <SpecimenComposition 
-                   loading={compositionLoading}
-                   data={compositionData}
-                   onAnalyze={() => fetchComposition(movie.tmdb_id, movie.media_type)}
-                />
 
-                <LabReport 
-                  loading={synopsisLoading}
-                  synopsis={synopsisData}
-                  onDecrypt={fetchSynopsis}
-                  onClose={closeSynopsis}
-                  movie={movie}
-                />
-            </>
-          )}
+      <main className="pb-24 w-full max-w-5xl mx-auto">
+        
+        {/* VIEW 1: MOVIE DETAIL */}
+        <div className={activeTab === 'detail' ? 'block' : 'hidden'}>
+           {/* [FIX] Removed SearchBar from here */}
+           
+           {error && (
+            <div className="mt-4 mx-4 flex items-center gap-2 bg-red-50 text-red-500 px-4 py-3 rounded-xl border border-red-100 text-sm font-medium animate-pulse">
+                <Info size={18} /> {error}
+            </div>
+           )}
+
+           <div className="px-4">
+             {/* [FIX] Pass SearchBar and EmptyState inside MovieCard */}
+             <MovieCard 
+                data={movie} 
+                searchBar={
+                    <SearchBar query={query} setQuery={setQuery} onSearch={searchMovie} loading={loading} />
+                }
+                emptyState={
+                    <EmptyState 
+                        icon={Film} 
+                        title="Ready for Analysis" 
+                        message="Search for a specimen to begin details examination." 
+                    />
+                }
+                onSelect={selectMovie} 
+                popcornData={popcornData}
+                popcornLoading={popcornLoading}
+                onFetchPopcorn={() => movie && fetchPopcorn(movie.tmdb_id, movie.media_type)}
+             />
+           </div>
         </div>
+
+        {/* VIEW 2: MEL'S REPORT */}
+        <div className={`px-4 ${activeTab === 'report' ? 'block' : 'hidden'}`}>
+             <SpecimenComposition 
+                loading={compositionLoading}
+                data={compositionData}
+                onAnalyze={() => movie && fetchComposition(movie.tmdb_id, movie.media_type)}
+                emptyState={!movie ? (
+                  <EmptyState 
+                     icon={FlaskConical} 
+                     title="No Specimen Selected" 
+                     message="Search for a specimen in the Detail tab to begin the analysis." 
+                  />
+                ) : null}
+             />
+        </div>
+
+        {/* VIEW 3: LAB ACCESS */}
+        <div className={`px-4 ${activeTab === 'lab' ? 'block' : 'hidden'}`}>
+             <LabReport 
+                loading={synopsisLoading}
+                synopsis={synopsisData}
+                onDecrypt={fetchSynopsis}
+                onClose={closeSynopsis}
+                movie={movie}
+                emptyState={!movie ? (
+                  <EmptyState 
+                     icon={ShieldAlert} 
+                     title="Restricted Area" 
+                     message="Search for a specimen in the Detail tab to request clearance for classified files." 
+                  />
+                ) : null}
+             />
+        </div>
+
       </main>
+
+      <SearchResultsModal 
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        candidates={candidates}
+        onSelect={selectMovie}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
+
+      <BottomNav 
+        activeTab={activeTab} 
+        setActiveTab={switchTab} // [FIX] Use switchTab instead of setActiveTab
+        loadingReport={compositionLoading}
+        loadingLab={synopsisLoading}
+      />
     </div>
   );
 }

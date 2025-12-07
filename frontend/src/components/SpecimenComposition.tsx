@@ -12,6 +12,7 @@ interface SpecimenCompositionProps {
   loading: boolean;
   data: CompositionData | null;
   onAnalyze: () => void;
+  emptyState?: React.ReactNode;
 }
 
 const MetricRow: React.FC<{ label: string; value: number; colorBar: string; icon: React.ReactNode }> = ({ label, value, colorBar, icon }) => {
@@ -25,7 +26,6 @@ const MetricRow: React.FC<{ label: string; value: number; colorBar: string; icon
         <span className="text-xs font-black text-gray-800">{value}</span>
       </div>
       
-      {/* [FIX] Reduced thickness to h-2 */}
       <div className="h-2 w-full bg-gray-100 rounded-sm overflow-hidden">
         <div 
           className={`h-full rounded-sm transition-all duration-1000 ease-out ${colorBar}`} 
@@ -38,12 +38,13 @@ const MetricRow: React.FC<{ label: string; value: number; colorBar: string; icon
   );
 };
 
-const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data, onAnalyze }) => {
+const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data, onAnalyze, emptyState }) => {
   
   return (
-    <div className="w-full max-w-lg mx-auto mt-6 bg-purple-50/50 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-purple-100 animate-fade-in-up">
+    // [FIX] Changed mt-6 to mt-2 to align with SearchBar
+    <div className="w-full max-w-lg mx-auto mt-2 bg-purple-50/50 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-purple-100 animate-fade-in-up">
       
-      {/* HEADER */}
+      {/* HEADER (Always Visible) */}
       <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50">
         <div className="bg-white p-2 rounded-full shadow-sm">
           <FlaskConical size={20} className="text-purple-600" />
@@ -58,6 +59,13 @@ const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data
 
       <div className="p-6">
         
+        {/* STATE 0: NO MOVIE SELECTED */}
+        {!loading && emptyState && (
+            <div className="py-4">
+                {emptyState}
+            </div>
+        )}
+
         {/* STATE 1: LOADING */}
         {loading && (
            <div className="flex flex-col items-center justify-center py-12 space-y-4">
@@ -68,10 +76,13 @@ const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data
            </div>
         )}
 
-        {/* STATE 2: INITIAL / FAILSAFE */}
-        {!loading && (!data || !data.emotional) && (
+        {/* STATE 2: MOVIE SELECTED BUT NO DATA */}
+        {!loading && !emptyState && (!data || !data.emotional) && (
            <div className="flex flex-col items-center justify-center py-8">
-              <button onClick={onAnalyze} className="group flex flex-col items-center gap-3 w-full">
+              <button 
+                onClick={onAnalyze}
+                className="group flex flex-col items-center gap-3 w-full"
+              >
                 <div className="bg-white p-4 rounded-full shadow-sm group-hover:scale-110 transition-transform border border-purple-100">
                     <RefreshCw size={24} className="text-purple-500" />
                 </div>
@@ -84,10 +95,10 @@ const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data
         )}
 
         {/* STATE 3: RESULTS GRID */}
-        {!loading && data && data.emotional && (
+        {!loading && !emptyState && data && data.emotional && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
             
-            {/* 1. EMOTIONAL EXPERIENCE (Violet) - [UPDATED] */}
+            {/* 1. EMOTIONAL EXPERIENCE */}
             <div className="bg-white rounded-2xl border border-violet-100 p-5 shadow-sm">
               <h4 className="text-xs font-black text-violet-500 uppercase mb-4 border-b border-violet-50 pb-2 flex items-center gap-2">
                  Emotional Experience
@@ -98,7 +109,7 @@ const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data
               <MetricRow label="Terror" value={data.emotional.terror} colorBar="bg-violet-400" icon={<Activity/>} />
             </div>
 
-            {/* 2. NARRATIVE STRUCTURE (Sky Blue) */}
+            {/* 2. NARRATIVE STRUCTURE */}
             <div className="bg-white rounded-2xl border border-sky-100 p-5 shadow-sm">
               <h4 className="text-xs font-black text-sky-500 uppercase mb-4 border-b border-sky-50 pb-2 flex items-center gap-2">
                  Narrative Structure
@@ -109,7 +120,7 @@ const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data
               <MetricRow label="Novelty" value={data.narrative.novelty} colorBar="bg-sky-400" icon={<Sparkles/>} />
             </div>
 
-            {/* 3. CONTENT INTENSITY (Rose Red) */}
+            {/* 3. CONTENT INTENSITY */}
             <div className="bg-white rounded-2xl border border-rose-100 p-5 shadow-sm">
               <h4 className="text-xs font-black text-rose-500 uppercase mb-4 border-b border-rose-50 pb-2 flex items-center gap-2">
                  Content Intensity
@@ -120,7 +131,7 @@ const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data
               <MetricRow label="Substance" value={data.content.substance} colorBar="bg-rose-400" icon={<Pill/>} />
             </div>
 
-            {/* 4. TECHNICAL DIAGNOSTICS (Emerald) */}
+            {/* 4. TECHNICAL DIAGNOSTICS */}
             <div className="bg-white rounded-2xl border border-emerald-100 p-5 shadow-sm">
               <h4 className="text-xs font-black text-emerald-500 uppercase mb-4 border-b border-emerald-50 pb-2 flex items-center gap-2">
                  Technical Diagnostics
