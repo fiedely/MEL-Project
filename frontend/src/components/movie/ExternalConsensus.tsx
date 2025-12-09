@@ -1,6 +1,7 @@
 import React from 'react';
-import { Activity, Loader2, RotateCcw } from 'lucide-react';
+import { Activity, RotateCcw } from 'lucide-react';
 import type { MovieData, PopcornData } from '../../App';
+import Skeleton from '../Skeleton'; // [NEW]
 
 interface ExternalConsensusProps {
   data: MovieData;
@@ -48,10 +49,17 @@ const ExternalConsensus: React.FC<ExternalConsensusProps> = ({
 
            {/* POPCORNMETER (Lavender) */}
            <div className="bg-purple-50 p-2 rounded-xl shadow-sm text-center border border-purple-100 relative overflow-hidden flex flex-col items-center justify-center">
+               {/* [UPDATED] Skeleton Loading State */}
                {popcornLoading ? (
-                 <Loader2 size={18} className="text-purple-600 animate-spin" />
+                 <div className="flex flex-col items-center justify-center w-full h-full gap-2">
+                    <Skeleton className="h-6 w-12 bg-purple-200/50" />
+                    <Skeleton className="h-2 w-16 bg-purple-200/50" />
+                 </div>
                ) : !popcornData ? (
-                 <Loader2 size={18} className="text-purple-600 animate-spin" />
+                 <div className="flex flex-col items-center justify-center w-full h-full gap-2">
+                    <Skeleton className="h-6 w-12 bg-purple-200/50" />
+                    <Skeleton className="h-2 w-16 bg-purple-200/50" />
+                 </div>
                ) : popcornData.popcorn_score === "N/A" ? (
                  <button onClick={onFetchPopcorn} className="flex flex-col items-center justify-center group w-full h-full">
                       <div className="text-purple-400 font-bold text-lg">N/A</div>

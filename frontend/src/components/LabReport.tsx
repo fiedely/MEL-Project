@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileWarning, DoorClosed, Fingerprint, Loader2, X, ShieldAlert, IdCard, Lock } from 'lucide-react';
 import type { SynopsisData, MovieData } from '../App';
+import SynopsisSkeleton from './skeletons/SynopsisSkeleton'; // [NEW]
 
 interface LabReportProps {
   loading: boolean;
@@ -19,8 +20,9 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
 
   const isTV = movie?.media_type === 'tv';
 
+  // [FIXED] Updated access logic to ensure parts exist
   const handleGrantAccess = () => {
-    if (isTV) {
+    if (isTV && movie?.collection?.parts && movie.collection.parts.length > 0) {
         setShowSeasonSelect(true);
     } else {
         setShowWarning(true);
@@ -65,7 +67,6 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
         {/* HEADER (Always Visible) */}
         <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50 relative">
           <div className="bg-white p-2 rounded-full shadow-sm">
-            {/* [UPDATED] Icon changed to DoorClosed */}
             <DoorClosed size={20} className="text-purple-600" />
           </div>
           <div>
@@ -144,13 +145,14 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
               </div>
           )}
 
-          {/* STATE 2: LOADING */}
+          {/* STATE 2: LOADING [UPDATED] */}
           {loading && (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <Loader2 size={40} className="text-purple-600 animate-spin" />
-              <span className="text-xs font-bold text-purple-600 uppercase tracking-widest animate-pulse">
-                Verifying Credentials...
-              </span>
+            <div className="space-y-4">
+               {/* Just a little header text during load */}
+               <div className="flex items-center justify-center gap-2 text-purple-600 text-xs font-bold uppercase tracking-widest animate-pulse mb-4">
+                  <Loader2 size={14} className="animate-spin" /> Verifying Credentials...
+               </div>
+               <SynopsisSkeleton />
             </div>
           )}
 

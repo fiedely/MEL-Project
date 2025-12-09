@@ -83,7 +83,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('detail');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // [NEW] Scroll Position Persistence
+  // Scroll Position Persistence
   const scrollPositions = useRef<Record<Tab, number>>({
     detail: 0,
     report: 0,
@@ -108,7 +108,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
-  // [NEW] Custom Tab Switcher to save/restore scroll
+  // Custom Tab Switcher to save/restore scroll
   const switchTab = (newTab: Tab) => {
     // 1. Save current scroll position
     scrollPositions.current[activeTab] = window.scrollY;
@@ -116,7 +116,7 @@ function App() {
     setActiveTab(newTab);
   };
 
-  // [NEW] Restore scroll position immediately after render
+  // Restore scroll position immediately after render
   useLayoutEffect(() => {
     const savedPosition = scrollPositions.current[activeTab];
     window.scrollTo({ top: savedPosition, behavior: 'instant' });
@@ -275,7 +275,7 @@ function App() {
 
   const closeSynopsis = () => { setSynopsisData(null); };
 
-return (
+  return (
     <div className="min-h-screen bg-lab-white font-sans selection:bg-lab-lavender selection:text-purple-900">
       <Navbar onReset={handleReset} />
 
@@ -283,7 +283,6 @@ return (
         
         {/* VIEW 1: MOVIE DETAIL */}
         <div className={activeTab === 'detail' ? 'block' : 'hidden'}>
-           {/* [FIX] Removed SearchBar from here */}
            
            {error && (
             <div className="mt-4 mx-4 flex items-center gap-2 bg-red-50 text-red-500 px-4 py-3 rounded-xl border border-red-100 text-sm font-medium animate-pulse">
@@ -292,7 +291,6 @@ return (
            )}
 
            <div className="px-4">
-             {/* [FIX] Pass SearchBar and EmptyState inside MovieCard */}
              <MovieCard 
                 data={movie} 
                 searchBar={
@@ -309,6 +307,7 @@ return (
                 popcornData={popcornData}
                 popcornLoading={popcornLoading}
                 onFetchPopcorn={() => movie && fetchPopcorn(movie.tmdb_id, movie.media_type)}
+                loading={loading}
              />
            </div>
         </div>
@@ -361,7 +360,7 @@ return (
 
       <BottomNav 
         activeTab={activeTab} 
-        setActiveTab={switchTab} // [FIX] Use switchTab instead of setActiveTab
+        setActiveTab={switchTab}
         loadingReport={compositionLoading}
         loadingLab={synopsisLoading}
       />

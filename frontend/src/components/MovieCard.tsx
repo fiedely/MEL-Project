@@ -12,9 +12,9 @@ import type { MovieData, PopcornData } from '../App';
 import ExternalConsensus from './movie/ExternalConsensus';
 import ProductionCredits from './movie/ProductionCredits';
 import CastGrid from './movie/CastGrid';
+import MovieDetailSkeleton from './skeletons/MovieDetailSkeleton'; // [NEW]
 
-// [FIX] Moved StatItem outside the main component
-// [FIX] Replaced 'any' with 'LucideIcon'
+// Helper for stats item
 const StatItem = ({ label, value, icon: Icon }: { label: string, value: string | number, icon: LucideIcon }) => (
   <div className="flex-1 flex flex-col justify-center items-center text-center px-1">
       <div className="text-[9px] text-gray-400 uppercase tracking-wider mb-1">{label}</div>
@@ -33,6 +33,7 @@ interface MovieCardProps {
   popcornData: PopcornData | null;
   popcornLoading: boolean;
   onFetchPopcorn: () => void;
+  loading: boolean; // [NEW]
 }
 
 const MovieCard: React.FC<MovieCardProps> = ({ 
@@ -42,7 +43,8 @@ const MovieCard: React.FC<MovieCardProps> = ({
     onSelect, 
     popcornData, 
     popcornLoading, 
-    onFetchPopcorn 
+    onFetchPopcorn,
+    loading // [NEW]
 }) => {
   const [showFullImage, setShowFullImage] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -106,14 +108,14 @@ const MovieCard: React.FC<MovieCardProps> = ({
             {searchBar}
         </div>
 
-        {/* CONTENT AREA */}
-        {!data && emptyState && (
+        {/* CONTENT AREA LOGIC */}
+        {loading ? (
+            <MovieDetailSkeleton />
+        ) : !data && emptyState ? (
             <div className="p-6">
                 {emptyState}
             </div>
-        )}
-
-        {data && (
+        ) : data ? (
             <>
                 {/* HERO IMAGE */}
                 <div className="relative aspect-[2/3] w-full bg-gray-100 group overflow-hidden border-b border-gray-100">
@@ -266,7 +268,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                 )}
                 </div>
             </>
-        )}
+        ) : null}
       </div>
     </>
   );

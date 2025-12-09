@@ -3,10 +3,10 @@ import {
   FlaskConical, RefreshCw, Heart, Zap, Smile, Activity, 
   GitBranch, Box, Gauge, Sparkles, 
   Skull, Flame, Mic2, Pill, 
-  Aperture, Music, User, CloudFog, 
-  Loader2 
+  Aperture, Music, User, CloudFog
 } from 'lucide-react';
 import type { CompositionData } from '../App';
+import CompositionSkeleton from './skeletons/CompositionSkeleton'; // [NEW]
 
 interface SpecimenCompositionProps {
   loading: boolean;
@@ -15,6 +15,7 @@ interface SpecimenCompositionProps {
   emptyState?: React.ReactNode;
 }
 
+// ... MetricRow Component stays the same ...
 const MetricRow: React.FC<{ label: string; value: number; colorBar: string; icon: React.ReactNode }> = ({ label, value, colorBar, icon }) => {
   return (
     <div className="mb-4 last:mb-0">
@@ -41,10 +42,9 @@ const MetricRow: React.FC<{ label: string; value: number; colorBar: string; icon
 const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data, onAnalyze, emptyState }) => {
   
   return (
-    // [FIX] Changed mt-6 to mt-2 to align with SearchBar
     <div className="w-full max-w-lg mx-auto mt-2 bg-purple-50/50 backdrop-blur-xl rounded-3xl shadow-lab overflow-hidden border border-purple-100 animate-fade-in-up">
       
-      {/* HEADER (Always Visible) */}
+      {/* HEADER */}
       <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50">
         <div className="bg-white p-2 rounded-full shadow-sm">
           <FlaskConical size={20} className="text-purple-600" />
@@ -66,14 +66,9 @@ const SpecimenComposition: React.FC<SpecimenCompositionProps> = ({ loading, data
             </div>
         )}
 
-        {/* STATE 1: LOADING */}
+        {/* STATE 1: LOADING [UPDATED] */}
         {loading && (
-           <div className="flex flex-col items-center justify-center py-12 space-y-4">
-             <Loader2 size={40} className="text-purple-600 animate-spin" />
-             <span className="text-xs font-bold text-purple-600 uppercase tracking-widest animate-pulse">
-               Synthesizing Compounds...
-             </span>
-           </div>
+           <CompositionSkeleton />
         )}
 
         {/* STATE 2: MOVIE SELECTED BUT NO DATA */}
