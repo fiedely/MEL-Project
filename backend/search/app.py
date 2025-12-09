@@ -173,17 +173,23 @@ def fetch_tv_details(tmdb_id):
     creators = [c['name'] for c in details.get('created_by', [])]
     crew = details.get('credits', {}).get('crew', [])
     
-    # [NEW] Extract Executive Producers for TV
+    # Extract Executive Producers for TV
     exec_producers = list(dict.fromkeys([m['name'] for m in crew if m['job'] == 'Executive Producer']))[:3]
     
     # Seasons
     seasons = []
     for s in details.get('seasons', []):
         if s['season_number'] > 0:
+            # [UPDATED] Added Year logic here
+            air_date = s.get('air_date')
+            s_year = air_date[:4] if air_date else "N/A"
+            episode_count = s.get('episode_count', 0)
+            
             seasons.append({
                 "id": s['id'],
                 "title": s['name'],
-                "year": f"{s.get('episode_count')} Eps",
+                # Combine Year and Episode count
+                "year": f"{s_year} | {episode_count} Eps",
                 "poster": f"https://image.tmdb.org/t/p/w200{s.get('poster_path')}" if s.get('poster_path') else None,
                 "media_type": "tv_season"
             })
@@ -222,8 +228,8 @@ def fetch_tv_details(tmdb_id):
         "creators": creators, 
         "writer": omdb_data.get('Writer', 'N/A'),
         "networks": [n['name'] for n in details.get('networks', [])],
-        "production": [c['name'] for c in details.get('production_companies', [])][:2], # [NEW] Added Production for TV too
-        "producers": exec_producers, # [NEW] Mapping Executive Producers to 'producers' field for UI
+        "production": [c['name'] for c in details.get('production_companies', [])][:2], 
+        "producers": exec_producers,
         "cast": [{"name": a['name'], "profile_path": f"https://image.tmdb.org/t/p/w200{a['profile_path']}" if a.get('profile_path') else None} for a in details.get('credits', {}).get('cast', [])[:30]],
         "genres": [g['name'] for g in details.get('genres', [])],
         "collection": collection_info,

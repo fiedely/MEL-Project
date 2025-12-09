@@ -65,10 +65,10 @@ const LabReport: React.FC<LabReportProps> = ({ loading, synopsis, onDecrypt, onC
         {/* HEADER (Always Visible) */}
         <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50 relative">
           <div className="bg-white p-2 rounded-full shadow-sm">
-            <ShieldAlert size={20} className="text-purple-600" />
+            {/* [UPDATED] Icon changed to DoorClosed */}
+            <DoorClosed size={20} className="text-purple-600" />
           </div>
           <div>
-            {/* [FIX] Removed lavender color span, now solid gray */}
             <h3 className="font-black text-gray-800 tracking-tight text-lg">
               RESTRICTED LAB ACCESS
             </h3>

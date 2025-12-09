@@ -3,13 +3,27 @@ import {
   Clock, Calendar, Film, CircleDollarSign, 
   Globe, Tag, X, Maximize2, 
   Award, Dna, FileText, 
-  Pipette, Hash, Tv, Play 
+  Pipette, Hash, Tv, Play,
+  BookOpen,
+  type LucideIcon 
 } from 'lucide-react';
 
 import type { MovieData, PopcornData } from '../App';
 import ExternalConsensus from './movie/ExternalConsensus';
 import ProductionCredits from './movie/ProductionCredits';
 import CastGrid from './movie/CastGrid';
+
+// [FIX] Moved StatItem outside the main component
+// [FIX] Replaced 'any' with 'LucideIcon'
+const StatItem = ({ label, value, icon: Icon }: { label: string, value: string | number, icon: LucideIcon }) => (
+  <div className="flex-1 flex flex-col justify-center items-center text-center px-1">
+      <div className="text-[9px] text-gray-400 uppercase tracking-wider mb-1">{label}</div>
+      <div className="font-bold text-gray-700 flex justify-center items-center gap-1.5 text-xs sm:text-sm leading-tight">
+          <Icon size={12} className="text-blue-700 shrink-0" /> 
+          <span>{value}</span>
+      </div>
+  </div>
+);
 
 interface MovieCardProps {
   data: MovieData | null;
@@ -75,12 +89,11 @@ const MovieCard: React.FC<MovieCardProps> = ({
         {/* HEADER */}
         <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50">
           <div className="bg-white p-2 rounded-full shadow-sm">
-            <Film size={20} className="text-purple-600" />
+            <BookOpen size={20} className="text-purple-600" />
           </div>
           <div>
-            {/* [FIX] Removed lavender color span, now solid gray */}
             <h3 className="font-black text-gray-800 tracking-tight text-lg">
-              SPECIMEN EXAMINATION
+              SPECIMEN DETAILS
             </h3>
             <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">
               Primary Data Archive
@@ -130,30 +143,20 @@ const MovieCard: React.FC<MovieCardProps> = ({
                 </div>
                 </div>
 
+                {/* QUICK STATS - EDGE TO EDGE */}
+                <div className="w-full bg-white border-b border-gray-100">
+                    <div className="flex w-full divide-x divide-gray-100 py-4">
+                        <StatItem label="Rated" value={data.rated} icon={Tag} />
+                        <StatItem label={isTV ? 'Timeline' : 'Year'} value={data.year} icon={Calendar} />
+                        <StatItem label={isTV ? 'Status' : 'Time'} value={isTV ? data.status || 'N/A' : `${data.runtime_minutes}m`} icon={Clock} />
+                        <StatItem label="Type" value={isTV ? 'Series' : 'Movie'} icon={isTV ? Tv : Film} />
+                    </div>
+                </div>
+
                 {/* DETAILS BODY */}
                 <div className="p-6 space-y-8">
                 
-                {/* A. QUICK STATS */}
-                <div className="grid grid-cols-4 gap-2 pb-4 border-b border-gray-100">
-                    <div className="text-center">
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Rated</div>
-                    <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm"><Tag size={12} className="text-blue-700 shrink-0"/> {data.rated}</div>
-                    </div>
-                    <div className="text-center border-l border-gray-100 px-1">
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">{isTV ? 'Timeline' : 'Year'}</div>
-                    <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm"><Calendar size={12} className="text-blue-700 shrink-0"/> {data.year}</div>
-                    </div>
-                    <div className="text-center border-l border-gray-100 px-1">
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">{isTV ? 'Status' : 'Time'}</div>
-                    <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm"><Clock size={12} className="text-blue-700 shrink-0"/> {isTV ? data.status : `${data.runtime_minutes}m`}</div>
-                    </div>
-                    <div className="text-center border-l border-gray-100 px-1">
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Type</div>
-                    <div className="font-bold text-gray-700 flex justify-center items-center gap-1 text-xs sm:text-sm">{isTV ? <Tv size={12} className="text-blue-700 shrink-0"/> : <Film size={12} className="text-blue-700 shrink-0"/>}{isTV ? 'Series' : 'Movie'}</div>
-                    </div>
-                </div>
-                
-                {/* B. EXTERNAL CONSENSUS */}
+                {/* EXTERNAL CONSENSUS */}
                 <ExternalConsensus 
                     data={data} 
                     popcornData={popcornData} 
