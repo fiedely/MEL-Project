@@ -12,7 +12,7 @@ import type { MovieData, PopcornData } from '../App';
 import ExternalConsensus from './movie/ExternalConsensus';
 import ProductionCredits from './movie/ProductionCredits';
 import CastGrid from './movie/CastGrid';
-import MovieDetailSkeleton from './skeletons/MovieDetailSkeleton'; // [NEW]
+import MovieDetailSkeleton from './skeletons/MovieDetailSkeleton'; 
 
 // Helper for stats item
 const StatItem = ({ label, value, icon: Icon }: { label: string, value: string | number, icon: LucideIcon }) => (
@@ -33,7 +33,7 @@ interface MovieCardProps {
   popcornData: PopcornData | null;
   popcornLoading: boolean;
   onFetchPopcorn: () => void;
-  loading: boolean; // [NEW]
+  loading: boolean;
 }
 
 const MovieCard: React.FC<MovieCardProps> = ({ 
@@ -44,7 +44,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
     popcornData, 
     popcornLoading, 
     onFetchPopcorn,
-    loading // [NEW]
+    loading
 }) => {
   const [showFullImage, setShowFullImage] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -89,15 +89,16 @@ const MovieCard: React.FC<MovieCardProps> = ({
       <div className="w-full max-w-lg mx-auto bg-white rounded-3xl shadow-lab overflow-hidden border border-lab-border mt-2 mb-6 transition-all duration-300">
         
         {/* HEADER */}
-        <div className="bg-purple-100/50 p-4 flex items-center gap-3 border-b border-purple-200/50">
+        {/* [UPDATED] Theme to Blue */}
+        <div className="bg-blue-50 p-4 flex items-center gap-3 border-b border-blue-100">
           <div className="bg-white p-2 rounded-full shadow-sm">
-            <BookOpen size={20} className="text-purple-600" />
+            <BookOpen size={20} className="text-blue-600" />
           </div>
           <div>
             <h3 className="font-black text-gray-800 tracking-tight text-lg">
               SPECIMEN DETAILS
             </h3>
-            <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">
+            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">
               Primary Data Archive
             </p>
           </div>

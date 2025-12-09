@@ -18,19 +18,17 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, onSearch, loadin
     <div className="w-full relative group">
       <form onSubmit={onSearch} className="relative">
         {/* Glow Effect */}
-        <div className="absolute inset-0 bg-lab-lavender blur-2xl opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
+        <div className="absolute inset-0 bg-blue-100 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
         
         <div className="relative flex items-center">
-          <Search className="absolute left-5 text-gray-400" size={20} />
           
           <input 
             id="search-input"
             type="text" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            // [FIX] Updated placeholder text
             placeholder="Search a title..." 
-            className="w-full pl-12 pr-24 py-4 rounded-2xl border-2 border-transparent bg-white shadow-lab focus:border-lab-lavender focus:ring-0 outline-none text-gray-700 text-lg transition-all placeholder:text-gray-400 font-medium"
+            className="w-full pl-5 pr-24 py-4 rounded-2xl border-2 border-transparent bg-white shadow-lab focus:border-blue-200 focus:ring-0 outline-none text-gray-700 text-lg transition-all placeholder:text-gray-400 font-medium"
           />
           
           {/* Action Buttons Container */}
@@ -47,11 +45,11 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, setQuery, onSearch, loadin
               </button>
             )}
 
-            {/* Analyze/Submit Button */}
             <button 
               type="submit"
               disabled={loading || !query}
-              className="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl transition-all disabled:opacity-0 disabled:scale-90 flex items-center justify-center shadow-md"
+              /* [UPDATED] Removed 'disabled:opacity-0 disabled:scale-90', added 'disabled:opacity-50' */
+              className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-md shadow-blue-200"
               title="Analyze"
             >
               {loading ? (

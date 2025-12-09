@@ -13,8 +13,14 @@ interface BottomNavProps {
 
 const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, loadingReport, loadingLab }) => {
   
-  // Helper to determine active color class
-  const getTabColor = (tabName: Tab) => activeTab === tabName ? 'text-purple-600' : 'text-gray-400 hover:text-gray-600';
+  // [UPDATED] Helper to distinguish colors per tab
+  const getTabColor = (tabName: Tab) => {
+    if (activeTab === tabName) {
+        if (tabName === 'detail') return 'text-blue-600'; // Detail is Blue
+        return 'text-purple-600'; // Others are Purple
+    }
+    return 'text-gray-400 hover:text-gray-600';
+  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-200 px-6 py-3 pb-safe z-40 shadow-[0_-4px_20px_-2px_rgba(0,0,0,0.05)]">
@@ -38,10 +44,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, loadingR
           className={`flex flex-col items-center gap-1 transition-all w-16 ${getTabColor('detail')}`}
         >
           <div className="relative">
-             {/* [UPDATED] Icon */}
              <BookOpen size={activeTab === 'detail' ? 24 : 22} strokeWidth={activeTab === 'detail' ? 2.5 : 2} />
           </div>
-          {/* [UPDATED] Label */}
           <span className="text-[9px] font-bold uppercase tracking-wide">Detail</span>
         </button>
 
@@ -51,11 +55,9 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, loadingR
           className={`flex flex-col items-center gap-1 transition-all w-16 ${getTabColor('lab')}`}
         >
           <div className="relative">
-            {/* [UPDATED] Icon */}
             <DoorClosed size={activeTab === 'lab' ? 24 : 22} strokeWidth={activeTab === 'lab' ? 2.5 : 2} />
             {loadingLab && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-purple-500 rounded-full animate-ping" />}
           </div>
-          {/* [UPDATED] Label */}
           <span className="text-[9px] font-bold uppercase tracking-wide">Restricted</span>
         </button>
 

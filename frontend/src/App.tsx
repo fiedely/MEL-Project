@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect, type FormEvent } from 'react';
 import axios from 'axios';
-import { Info, Film, FlaskConical, ShieldAlert } from 'lucide-react'; 
+// [UPDATED] Added BookOpen import
+import { Info, FlaskConical, ShieldAlert, BookOpen } from 'lucide-react'; 
 
 import Navbar from './components/Navbar';
 import SearchBar from './components/SearchBar';
@@ -188,6 +189,9 @@ function App() {
   };
 
   const handleDirectSelection = (movieData: MovieData) => {
+      // Sync search bar text
+      setQuery(`${movieData.title} (${movieData.year})`);
+
       // Reset scroll history for new movie
       scrollPositions.current = { detail: 0, report: 0, lab: 0 };
       window.scrollTo(0, 0);
@@ -298,9 +302,11 @@ function App() {
                 }
                 emptyState={
                     <EmptyState 
-                        icon={Film} 
+                        // [UPDATED] Icon to BookOpen and added color="blue"
+                        icon={BookOpen} 
                         title="Ready for Analysis" 
                         message="Search for a specimen to begin details examination." 
+                        color="blue"
                     />
                 }
                 onSelect={selectMovie} 
@@ -323,6 +329,7 @@ function App() {
                      icon={FlaskConical} 
                      title="No Specimen Selected" 
                      message="Search for a specimen in the Detail tab to begin the analysis." 
+                     color="purple"
                   />
                 ) : null}
              />
@@ -341,6 +348,7 @@ function App() {
                      icon={ShieldAlert} 
                      title="Restricted Area" 
                      message="Search for a specimen in the Detail tab to request clearance for classified files." 
+                     color="purple"
                   />
                 ) : null}
              />
